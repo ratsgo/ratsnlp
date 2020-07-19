@@ -1,19 +1,34 @@
 import os
+import json
 import tqdm
 import logging
 import requests
 
 REMOTE_DATA_MAP = {
+    "nsmc": {
+        "train": {
+            "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_train.txt",
+            "fname": "nsmc_train.txt",
+        },
+        "test": {
+            "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_test.txt",
+            "fname": "nsmc_test.txt",
+        },
+    }
+}
+
+REMOTE_MODEL_MAP = {
     "kobert" : {
         "tokenizer" : {
-            'url': 'https://kobert.blob.core.windows.net/models/kobert/tokenizer/kobert_news_wiki_ko_cased-ae5711deb3.spiece',
-            'fname': 'vocab.txt',
+            "googledrive_file_id": "1PEo8y2aTLTjUgRJlIowHDwFEWeFTfKdt",
+            "fname": "vocab.txt",
         },
         "model" : {
-            'url': 'https://kobert.blob.core.windows.net/models/kobert/pytorch/pytorch_kobert_2439f391a6.params',
-            'fname': 'pytorch_model.bin',
+            "web_url": "https://kobert.blob.core.windows.net/models/kobert/pytorch/pytorch_kobert_2439f391a6.params",
+            "fname": "pytorch_model.bin",
         },
         "config" : {
+            'model_type': "bert",
             'attention_probs_dropout_prob': 0.1,
             'hidden_act': 'gelu',
             'hidden_dropout_prob': 0.1,
@@ -28,7 +43,7 @@ REMOTE_DATA_MAP = {
         },
     },
 }
-GOOGLE_URL = "https://docs.google.com/uc?export=download"
+GOOGLE_DRIVE_URL = "https://docs.google.com/uc?export=download"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
@@ -51,6 +66,18 @@ def save_response_content(response, save_path):
         progress.close()
 
 
+def get_valid_path(cache_dir, save_fname, make_dir=True):
+    # 캐시 디렉토리 절대 주소 확인
+    if cache_dir.startswith("~"):
+        cache_dir = os.path.expanduser(cache_dir)
+    else:
+        cache_dir = os.path.abspath(cache_dir)
+    if make_dir:
+        os.makedirs(cache_dir, exist_ok=True)
+    valid_save_path = os.path.join(cache_dir, save_fname)
+    return valid_save_path
+
+
 def google_download(file_id,
                     save_fname,
                     cache_dir="~/cache",
@@ -60,29 +87,23 @@ def google_download(file_id,
             if key.startswith('download_warning'):
                 return value
         return None
-    # 캐시 디렉토리 절대 주소 확인
-    if cache_dir.startswith("~"):
-        cache_dir = os.path.expanduser(cache_dir)
-    else:
-        cache_dir = os.path.abspath(cache_dir)
-    os.makedirs(cache_dir, exist_ok=True)
+    valid_save_path = get_valid_path(cache_dir, save_fname)
     # 캐시 파일이 있으면 캐시 사용
-    save_path = os.path.join(cache_dir, save_fname)
-    if os.path.exists(save_path) and not force_download:
-        logger.info(f"cache file({save_path}) exists, using cache!")
-        return save_path
+    if os.path.exists(valid_save_path) and not force_download:
+        logger.info(f"cache file({valid_save_path}) exists, using cache!")
+        return valid_save_path
     # init a HTTP session
     session = requests.Session()
     # make a request
-    response = session.get(GOOGLE_URL, params={'id': file_id}, stream=True)
+    response = session.get(GOOGLE_DRIVE_URL, params={'id': file_id}, stream=True)
     # get confirmation token
     token = get_confirm_token(response)
     if token:
         params = {'id': file_id, 'confirm': token}
-        response = session.get(GOOGLE_URL, params=params, stream=True)
+        response = session.get(GOOGLE_DRIVE_URL, params=params, stream=True)
     # download to disk
-    save_response_content(response, save_path)
-    return save_path
+    save_response_content(response, valid_save_path)
+    return valid_save_path
 
 
 def web_download(url,
@@ -96,17 +117,11 @@ def web_download(url,
     https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
     https://github.com/SKTBrain/KoBERT/blob/master/kobert/utils.py
     """
-    # 캐시 디렉토리 절대 주소 확인
-    if cache_dir.startswith("~"):
-        cache_dir = os.path.expanduser(cache_dir)
-    else:
-        cache_dir = os.path.abspath(cache_dir)
-    os.makedirs(cache_dir, exist_ok=True)
+    valid_save_path = get_valid_path(cache_dir, save_fname)
     # 캐시 파일이 있으면 캐시 사용
-    save_path = os.path.join(cache_dir, save_fname)
-    if os.path.exists(save_path) and not force_download:
-        logger.info(f"cache file({save_path}) exists, using cache!")
-        return save_path
+    if os.path.exists(valid_save_path) and not force_download:
+        logger.info(f"cache file({valid_save_path}) exists, using cache!")
+        return valid_save_path
     # url 유효성 체크
     # etag is None = we don't have a connection, or url doesn't exist, or is otherwise inaccessible.
     etag = None
@@ -119,5 +134,68 @@ def web_download(url,
     if etag is None:
         raise ValueError(f"not valid URL({url}), cannot download resources")
     response = requests.get(url, stream=True)
-    save_response_content(response, save_path)
-    return save_path
+    save_response_content(response, valid_save_path)
+    return valid_save_path
+
+
+def download_dataset(data_name, cache_dir="~/cache", force_download=False):
+    data_name = data_name.lower()
+    if data_name in REMOTE_DATA_MAP.keys():
+        for value in REMOTE_DATA_MAP[data_name].values():
+            if "web_url" in value.keys():
+                web_download(value["web_url"], value["fname"], cache_dir, force_download=force_download)
+            else:
+                google_download(value["googledrive_file_id"], value["fname"], cache_dir, force_download)
+    else:
+        raise ValueError(f"not valid data name({data_name}), cannot download resources")
+
+
+def download_model(model_name, cache_dir="~/cache", force_download=False):
+    model_name = model_name.lower()
+    if model_name in REMOTE_MODEL_MAP.keys():
+        for key, value in REMOTE_MODEL_MAP[model_name].items():
+            if key != "config":
+                if "web_url" in value.keys():
+                    web_download(value["web_url"], value["fname"], cache_dir, force_download=force_download)
+                else:
+                    google_download(value["googledrive_file_id"], value["fname"], cache_dir, force_download)
+            else:
+                valid_save_path = get_valid_path(cache_dir, "config.json")
+                if os.path.exists(valid_save_path) and not force_download:
+                    logger.info(f"cache file({valid_save_path}) exists, using cache!")
+                else:
+                    with open(valid_save_path, "w") as f:
+                        json.dump(value, f, indent=4)
+    else:
+        raise ValueError(f"not valid model name({model_name}), cannot download resources")
+
+
+def set_logger(training_args):
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.INFO if training_args.local_rank in [-1, 0] else logging.WARN,
+    )
+    logger.warning(
+        "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
+        training_args.local_rank,
+        training_args.device,
+        training_args.n_gpu,
+        bool(training_args.local_rank != -1),
+        training_args.fp16,
+    )
+    logger.info("Training/evaluation parameters %s", training_args)
+
+
+def check_exist_checkpoints(training_args):
+    if (
+        os.path.exists(training_args.output_dir)
+        and os.listdir(training_args.output_dir)
+        and training_args.do_train
+        and not training_args.overwrite_output_dir
+    ):
+        raise ValueError(
+            f"Output directory ({training_args.output_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
+        )
+    else:
+        logger.info(f"Output directory ({training_args.output_dir}) is empty. check OK!")
