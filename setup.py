@@ -12,7 +12,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "transformers==3.0.2",
-        "sklearn",
+        "scikit-learn==0.23.1",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -3,16 +3,18 @@ import json
 import tqdm
 import logging
 import requests
+from transformers import set_seed
+
 
 REMOTE_DATA_MAP = {
     "nsmc": {
         "train": {
             "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_train.txt",
-            "fname": "nsmc_train.txt",
+            "fname": "train.txt",
         },
         "test": {
             "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_test.txt",
-            "fname": "nsmc_test.txt",
+            "fname": "test.txt",
         },
     }
 }
@@ -20,7 +22,7 @@ REMOTE_DATA_MAP = {
 REMOTE_MODEL_MAP = {
     "kobert" : {
         "tokenizer" : {
-            "googledrive_file_id": "1PEo8y2aTLTjUgRJlIowHDwFEWeFTfKdt",
+            "googledrive_file_id": "1hNWzHMZcCkK50d_IqIN_ost8TZNg0lzL",
             "fname": "vocab.txt",
         },
         "model" : {
@@ -138,7 +140,7 @@ def web_download(url,
     return valid_save_path
 
 
-def download_dataset(data_name, cache_dir="~/cache", force_download=False):
+def download_downstream_dataset(data_name, cache_dir="~/cache", force_download=False):
     data_name = data_name.lower()
     if data_name in REMOTE_DATA_MAP.keys():
         for value in REMOTE_DATA_MAP[data_name].values():
@@ -150,7 +152,7 @@ def download_dataset(data_name, cache_dir="~/cache", force_download=False):
         raise ValueError(f"not valid data name({data_name}), cannot download resources")
 
 
-def download_model(model_name, cache_dir="~/cache", force_download=False):
+def download_pretrained_model(model_name, cache_dir="~/cache", force_download=False):
     model_name = model_name.lower()
     if model_name in REMOTE_MODEL_MAP.keys():
         for key, value in REMOTE_MODEL_MAP[model_name].items():
@@ -199,3 +201,8 @@ def check_exist_checkpoints(training_args):
         )
     else:
         logger.info(f"Output directory ({training_args.output_dir}) is empty. check OK!")
+
+
+def seed_setting(seed: int):
+    set_seed(seed)
+    logger.info(f"complete setting seed({seed})")
