@@ -12,7 +12,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "transformers==3.0.2",
-        "scikit-learn==0.23.1",
+        "pytorch_lightning==0.8.5",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

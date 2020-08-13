@@ -5,47 +5,82 @@ import logging
 from filelock import FileLock
 from typing import List, Optional, Union
 from torch.utils.data.dataset import Dataset
+from ratsnlp.nlpbook.arguments import Arguments
+from torch.utils.data import DataLoader, SequentialSampler, RandomSampler
 from transformers import InputExample, InputFeatures, PreTrainedTokenizer
-from ratsnlp.arguments import PretrainedModelArguments, DownstreamDataArguments
-from ratsnlp.corpus import Corpus, CORPUS_FACTORY
 
 
 logger = logging.getLogger(__name__)
 
 
+class Corpus:
+
+    @classmethod
+    def _read_corpus(cls, input_file, quotechar=None):
+        raise NotImplementedError()
+
+    def _create_examples(self, lines, set_type):
+        raise NotImplementedError()
+
+    def get_labels(self):
+        raise NotImplementedError()
+
+    def get_train_examples(self, data_path):
+        logger.info("LOOKING AT {}".format(data_path))
+        return self._create_examples(self._read_corpus(data_path), "train")
+
+    def get_dev_examples(self, data_path):
+        logger.info("LOOKING AT {}".format(data_path))
+        return self._create_examples(self._read_corpus(data_path), "dev")
+
+    def get_test_examples(self, data_path):
+        logger.info("LOOKING AT {}".format(data_path))
+        return self._create_examples(self._read_corpus(data_path), "test")
+
+    def get_example_from_tensor_dict(self, tensor_dict):
+        return InputExample(
+            tensor_dict["idx"].numpy(),
+            tensor_dict["sentence1"].numpy().decode("utf-8"),
+            tensor_dict["sentence2"].numpy().decode("utf-8"),
+            str(tensor_dict["label"].numpy()),
+        )
+
+    def tfds_map(self, example):
+        if len(self.get_labels()) > 1:
+            example.label = self.get_labels()[int(example.label)]
+        return example
+
+
 class DownstreamDataset(Dataset):
 
-    model_args: PretrainedModelArguments
-    data_args: DownstreamDataArguments
+    args: Arguments
     corpus: Corpus
     features: List[InputFeatures]
 
     def __init__(
         self,
-        model_args: PretrainedModelArguments,
-        data_args: DownstreamDataArguments,
+        args: Arguments,
         tokenizer: PreTrainedTokenizer,
-        corpus: Optional[Corpus] = None,
+        corpus: Corpus,
         limit_length: Optional[int] = None,
         mode: Optional[str] = "train",
         cache_dir: Optional[str] = None,
     ):
         if corpus is not None:
             self.corpus = corpus
-        elif data_args.corpus_name in CORPUS_FACTORY.keys():
-            self.corpus = CORPUS_FACTORY[data_args.corpus_name]()
         else:
             raise KeyError("corpus is not valid")
-        if not model_args.loss_type in ["classification", "regression"]:
-            raise KeyError(f"loss type is classification or regression. but current setting is {model_args.loss_type}")
-        self.loss_type = model_args.loss_type
-        if not mode in ["train", "dev", "test"]:
+        if not mode in ["train", "val", "test"]:
             raise KeyError(f"mode({mode}) is not a valid split name")
         # Load data features from cache or dataset file
         cached_features_file = os.path.join(
-            cache_dir if cache_dir is not None else data_args.corpus_dir,
+            cache_dir if cache_dir is not None else args.downstream_corpus_dir,
             "cached_{}_{}_{}_{}_{}".format(
-                mode, tokenizer.__class__.__name__, str(data_args.max_seq_length), data_args.corpus_name, data_args.task_name,
+                mode,
+                tokenizer.__class__.__name__,
+                str(args.max_seq_length),
+                args.downstream_corpus_name,
+                args.downstream_task_name,
             ),
         )
 
@@ -54,17 +89,17 @@ class DownstreamDataset(Dataset):
         lock_path = cached_features_file + ".lock"
         with FileLock(lock_path):
 
-            if os.path.exists(cached_features_file) and not data_args.overwrite_cache:
+            if os.path.exists(cached_features_file) and not args.overwrite_cache:
                 start = time.time()
                 self.features = torch.load(cached_features_file)
                 logger.info(
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                logger.info(f"Creating features from dataset file at {data_args.corpus_dir}")
+                logger.info(f"Creating features from dataset file at {args.downstream_corpus_dir}")
 
-                corpus_fpath = os.path.join(data_args.corpus_dir, f"{mode}.txt")
-                if mode == "dev":
+                corpus_fpath = os.path.join(args.downstream_corpus_dir, f"{mode}.txt")
+                if mode == "val":
                     examples = self.corpus.get_dev_examples(corpus_fpath)
                 elif mode == "test":
                     examples = self.corpus.get_test_examples(corpus_fpath)
@@ -75,9 +110,9 @@ class DownstreamDataset(Dataset):
                 self.features = _convert_examples_to_features(
                     examples,
                     tokenizer,
-                    max_length=data_args.max_seq_length,
-                    loss_type=self.loss_type,
-                    label_list=self.corpus.get_labels() if self.loss_type == "classification" else None,
+                    max_length=args.max_seq_length,
+                    loss_type="classification",
+                    label_list=self.corpus.get_labels(),
                 )
                 start = time.time()
                 logging.info(
@@ -156,27 +191,58 @@ def _convert_examples_to_features(
     return features
 
 
-def get_datasets(corpus_class, tokenizer, args):
-    pretrained_model_args, downstream_data_args, fine_tuning_args = args
-    train_dataset = (
-        DownstreamDataset(pretrained_model_args, downstream_data_args,
-                          corpus=corpus_class, tokenizer=tokenizer, mode="train",
-                          cache_dir=downstream_data_args.data_cache_dir)
-        if fine_tuning_args.do_train
-        else None
-    )
-    eval_dataset = (
-        DownstreamDataset(pretrained_model_args, downstream_data_args,
-                          corpus=corpus_class, tokenizer=tokenizer, mode="dev",
-                          cache_dir=downstream_data_args.data_cache_dir)
-        if fine_tuning_args.do_eval
-        else None
-    )
-    test_dataset = (
-        DownstreamDataset(pretrained_model_args, downstream_data_args,
-                          corpus=corpus_class, tokenizer=tokenizer, mode="test",
-                          cache_dir=downstream_data_args.data_cache_dir)
-        if fine_tuning_args.do_predict
-        else None
-    )
-    return train_dataset, eval_dataset, test_dataset
+def get_dataloaders(corpus_class, tokenizer, args):
+    if args.do_train:
+        train_dataset = DownstreamDataset(
+            args=args,
+            corpus=corpus_class,
+            tokenizer=tokenizer,
+            mode="train",
+            cache_dir=args.data_cache_dir
+        )
+        train_dataloader = DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            sampler=RandomSampler(train_dataset, replacement=False),
+            drop_last=False,
+            num_workers=args.cpu_workers,
+        )
+    else:
+        train_dataloader = None
+
+    if args.do_eval:
+        val_dataset = DownstreamDataset(
+            args=args,
+            corpus=corpus_class,
+            tokenizer=tokenizer,
+            mode="val",
+            cache_dir=args.data_cache_dir
+        )
+        val_dataloader = DataLoader(
+            val_dataset,
+            batch_size=args.batch_size,
+            sampler=SequentialSampler(val_dataset),
+            drop_last=False,
+            num_workers=args.cpu_workers,
+        )
+    else:
+        val_dataloader = None
+
+    if args.do_predict:
+        test_dataset = DownstreamDataset(
+            args=args,
+            corpus=corpus_class,
+            tokenizer=tokenizer,
+            mode="test",
+            cache_dir=args.data_cache_dir
+        )
+        test_dataloader = DataLoader(
+            test_dataset,
+            batch_size=args.batch_size,
+            sampler=SequentialSampler(test_dataset),
+            drop_last=False,
+            num_workers=args.cpu_workers,
+        )
+    else:
+        test_dataloader = None
+    return train_dataloader, val_dataloader, test_dataloader

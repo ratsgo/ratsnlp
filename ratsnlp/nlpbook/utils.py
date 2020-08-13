@@ -12,9 +12,9 @@ REMOTE_DATA_MAP = {
             "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_train.txt",
             "fname": "train.txt",
         },
-        "test": {
+        "val": {
             "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_test.txt",
-            "fname": "test.txt",
+            "fname": "val.txt",
         },
     }
 }
@@ -172,37 +172,29 @@ def download_pretrained_model(model_name, cache_dir="~/cache", force_download=Fa
         raise ValueError(f"not valid model name({model_name}), cannot download resources")
 
 
-def set_logger(training_args):
+def set_logger(args):
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO if training_args.local_rank in [-1, 0] else logging.WARN,
+        level=logging.INFO,
     )
-    logger.warning(
-        "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
-        training_args.local_rank,
-        training_args.device,
-        training_args.n_gpu,
-        bool(training_args.local_rank != -1),
-        training_args.fp16,
-    )
-    logger.info("Training/evaluation parameters %s", training_args)
+    logger.info("Training/evaluation parameters %s", args)
 
 
-def check_exist_checkpoints(training_args):
+def check_exist_checkpoints(args):
     if (
-        os.path.exists(training_args.output_dir)
-        and os.listdir(training_args.output_dir)
-        and training_args.do_train
-        and not training_args.overwrite_output_dir
+        os.path.exists(args.downstream_model_dir)
+        and os.listdir(args.downstream_model_dir)
+        and args.do_train
+        and not args.overwrite_model
     ):
         raise ValueError(
-            f"Output directory ({training_args.output_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
+            f"Output directory ({args.downstream_model_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
         )
     else:
-        logger.info(f"Output directory ({training_args.output_dir}) is empty. check OK!")
+        logger.info(f"Output directory ({args.downstream_model_dir}) is empty. check OK!")
 
 
-def seed_setting(seed: int):
-    set_seed(seed)
-    logger.info(f"complete setting seed({seed})")
+def seed_setting(args):
+    set_seed(args.seed)
+    logger.info(f"complete setting seed({args.seed})")
