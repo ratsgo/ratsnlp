@@ -208,36 +208,56 @@ def web_download(url,
     return valid_save_path
 
 
-def download_downstream_dataset(data_name, cache_dir="~/cache", force_download=False):
-    data_name = data_name.lower()
+def download_downstream_dataset(args):
+    data_name = args.downstream_corpus_name.lower()
     if data_name in REMOTE_DATA_MAP.keys():
         for value in REMOTE_DATA_MAP[data_name].values():
             if "web_url" in value.keys():
-                web_download(value["web_url"], value["fname"], cache_dir, force_download=force_download)
+                web_download(
+                    url=value["web_url"],
+                    save_fname=value["fname"],
+                    cache_dir=args.downstream_corpus_dir,
+                    force_download=args.force_download,
+                )
             else:
-                google_download(value["googledrive_file_id"], value["fname"], cache_dir, force_download)
+                google_download(
+                    file_id=value["googledrive_file_id"],
+                    save_fname=value["fname"],
+                    cache_dir=args.downstream_corpus_dir,
+                    force_download=args.force_download
+                )
     else:
         raise ValueError(f"not valid data name({data_name}), cannot download resources")
 
 
-def download_pretrained_model(model_name, cache_dir="~/cache", force_download=False):
-    model_name = model_name.lower()
-    if model_name in REMOTE_MODEL_MAP.keys():
-        for key, value in REMOTE_MODEL_MAP[model_name].items():
+def download_pretrained_model(args):
+    pretrained_model_name = args.pretrained_model_name.lower()
+    if pretrained_model_name in REMOTE_MODEL_MAP.keys():
+        for key, value in REMOTE_MODEL_MAP[pretrained_model_name].items():
             if key != "config":
                 if "web_url" in value.keys():
-                    web_download(value["web_url"], value["fname"], cache_dir, force_download=force_download)
+                    web_download(
+                        url=value["web_url"],
+                        save_fname=value["fname"],
+                        cache_dir=args.pretrained_model_cache_dir,
+                        force_download=args.force_download,
+                    )
                 else:
-                    google_download(value["googledrive_file_id"], value["fname"], cache_dir, force_download)
+                    google_download(
+                        file_id=value["googledrive_file_id"],
+                        save_fname=value["fname"],
+                        cache_dir=args.pretrained_model_cache_dir,
+                        force_download=args.force_download,
+                    )
             else:
-                valid_save_path = get_valid_path(cache_dir, "config.json")
-                if os.path.exists(valid_save_path) and not force_download:
+                valid_save_path = get_valid_path(args.pretrained_model_cache_dir, "config.json")
+                if os.path.exists(valid_save_path) and not args.force_download:
                     logger.info(f"cache file({valid_save_path}) exists, using cache!")
                 else:
                     with open(valid_save_path, "w") as f:
                         json.dump(value, f, indent=4)
     else:
-        raise ValueError(f"not valid model name({model_name}), cannot download resources")
+        raise ValueError(f"not valid model name({pretrained_model_name}), cannot download resources")
 
 
 def set_logger(args):

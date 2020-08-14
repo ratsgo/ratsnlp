@@ -59,7 +59,7 @@ class Arguments:
     )
     overwrite_model: bool = field(
         default=False,
-        metadata={"help": "overwrite model"}
+        metadata={"help": "overwrite model checkpoints."}
     )
     save_top_k: int = field(
         default=1,
@@ -80,6 +80,10 @@ class Arguments:
     overwrite_cache: bool = field(
         default=False,
         metadata={"help": "Overwrite the cached training and evaluation sets"}
+    )
+    force_download: bool = field(
+        default=False,
+        metadata={"help": "force to download downstream data and pretrained models."}
     )
     test_mode: bool = field(
         default=False,
