@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from transformers import HfArgumentParser
 
 
-def load_arguments(json_file_path=None):
-    parser = HfArgumentParser(Arguments)
+def load_arguments(argument_class, json_file_path=None):
+    parser = HfArgumentParser(argument_class)
     if json_file_path is not None:
         args, = parser.parse_json_file(json_file=json_file_path)
     elif len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
@@ -19,7 +19,7 @@ def load_arguments(json_file_path=None):
 class Arguments:
 
     pretrained_model_name: str = field(
-        default="kobert",
+        default="kcbert-base",
         metadata={"help": "pretrained model name"}
     )
     pretrained_model_cache_dir: str = field(
