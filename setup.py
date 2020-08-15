@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="ratsnlp",
-    version="0.0.3",
+    version="0.0.4",
     license='MIT',
     author="ratsgo",
     author_email="ratsgo@naver.com",
@@ -12,7 +12,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "transformers==3.0.2",
-        "pytorch_lightning==0.8.5",
+        "pytorch-lightning==0.8.5",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
