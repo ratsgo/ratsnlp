@@ -10,10 +10,16 @@ setuptools.setup(
     long_description=open('README.md').read(),
     url="https://github.com/ratsgo/ratsnlp",
     packages=setuptools.find_packages(),
+    include_package_data=True,
+    package_data = {
+        'ratsnlp.nlpbook.classification': ['*.html']
+    },
     install_requires=[
         "torch==1.5.1",
         "pytorch-lightning==0.8.5",
         "transformers==3.0.2",
+        "flask==1.1.2",
+        "flask_cors==3.0.8",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",

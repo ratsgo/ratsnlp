@@ -1,7 +1,7 @@
 from transformers import PreTrainedModel
 from transformers.optimization import AdamW
 from pytorch_lightning import LightningModule
-from ratsnlp.nlpbook.arguments import Arguments
+from ratsnlp.nlpbook.arguments import TrainArguments
 from pytorch_lightning.metrics.classification import accuracy
 from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
@@ -11,7 +11,7 @@ class Runner(LightningModule):
 
     def __init__(self,
                  model: PreTrainedModel,
-                 args: Arguments,
+                 args: TrainArguments,
     ):
         super().__init__()
         self.model = model

@@ -16,7 +16,7 @@ def load_arguments(argument_class, json_file_path=None):
 
 
 @dataclass
-class Arguments:
+class TrainArguments:
 
     pretrained_model_name: str = field(
         default="kcbert-base",
@@ -25,14 +25,6 @@ class Arguments:
     pretrained_model_cache_dir: str = field(
         default=None,
         metadata={"help": "Where do you want to store the pretrained models downloaded from web"}
-    )
-    pretrained_model_config_name: str = field(
-        default=None,
-        metadata={"help": "Pretrained config name or path if not the same as model_name"}
-    )
-    tokenizer_name: str = field(
-        default=None,
-        metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
     )
     max_seq_length: int = field(
         default=128,
@@ -142,3 +134,26 @@ class Arguments:
         metadata={"help": "train statistics window length"}
     )
 
+
+@dataclass
+class DeployArguments:
+
+    pretrained_model_cache_dir: str = field(
+        default=None,
+        metadata={"help": "Where do you want to store the pretrained models downloaded from web"}
+    )
+    downstream_model_checkpoint_path: str = field(
+        default=None,
+        metadata={"help": "The output model checkpoint path."}
+    )
+    downstream_task_name: str = field(
+        default=None,
+        metadata={"help": "The name of the downstream task."}
+    )
+    max_seq_length: int = field(
+        default=128,
+        metadata={
+            "help": "The maximum total input sequence length after tokenization. Sequences longer "
+                    "than this will be truncated, sequences shorter will be padded."
+        }
+    )

@@ -5,7 +5,7 @@ import logging
 from filelock import FileLock
 from typing import List, Optional, Union
 from torch.utils.data.dataset import Dataset
-from ratsnlp.nlpbook.arguments import Arguments
+from ratsnlp.nlpbook.arguments import TrainArguments
 from torch.utils.data import DataLoader, SequentialSampler, RandomSampler
 from transformers import InputExample, InputFeatures, PreTrainedTokenizer
 
@@ -57,13 +57,13 @@ class Corpus:
 
 class DownstreamDataset(Dataset):
 
-    args: Arguments
+    args: TrainArguments
     corpus: Corpus
     features: List[InputFeatures]
 
     def __init__(
         self,
-        args: Arguments,
+        args: TrainArguments,
         tokenizer: PreTrainedTokenizer,
         corpus: Corpus,
         limit_length: Optional[int] = None,

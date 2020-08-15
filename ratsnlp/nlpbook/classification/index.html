@@ -1,0 +1,48 @@
+<!-- include ajax -->
+<head>
+<meta charset="UTF-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+</head>
+<body style="font-size:20px; font-family:Arial">
+<div id="decription">
+<b>(CAM)2 모델 (ver : 0.1)</b>
+<br>
+주어진 문장의 극성을 판별하고, 해당 극성 판단에 가장 많은 영향을 끼친 단어/구를 분석합니다.
+<br>
+<p>
+<!-- form, button and output -->
+<input type="text" id="input" onkeypress="if(event.keyCode==13) {api_call(); return false;}" style="font-size:20px; width:500px" name="input" placeholder="문장을 입력하세요"/>
+<button id="btn" style="font-size:20px">입력</button>
+<p>
+<div id="api_output" style="font-weight: bold"> </div>
+</body>
+
+<script>
+function api_call() {
+    var input = $("#input").val();
+    console.log(input);
+    $.ajax({
+        url: "http://0.0.0.0:5000/api",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(input),
+        success: function( data, textStatus, jQxhr ){
+            $('#api_output').html( data.output );
+            $("#input").val("");
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            $('#api_output').html( "There was an error" );
+            console.log( errorThrown );
+        },
+        timeout: 3000
+    });
+}
+$( document ).ready(function() {
+    // request when clicking on the button
+    $('#btn').click(function() {
+        api_call();
+        input = "";
+    });
+});
+</script>
