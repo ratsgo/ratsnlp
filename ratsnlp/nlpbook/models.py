@@ -48,6 +48,7 @@ def get_trainer(args):
         fast_dev_run=args.test_mode,
         num_sanity_val_steps=None if args.test_mode else 0,
         checkpoint_callback=checkpoint_callback,
+        default_root_dir=args.downstream_model_dir,
         # For GPU Setup
         deterministic=torch.cuda.is_available(),
         gpus=torch.cuda.device_count() if torch.cuda.is_available() else None,
