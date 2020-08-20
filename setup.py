@@ -15,7 +15,7 @@ setuptools.setup(
         'ratsnlp.nlpbook.classification': ['*.html']
     },
     install_requires=[
-        "torch==1.5.1",
+        "torch>=1.5.1",
         "pytorch-lightning==0.8.5",
         "transformers==3.0.2",
         "flask==1.1.2",
