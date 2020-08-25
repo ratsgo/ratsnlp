@@ -185,12 +185,6 @@ def _convert_examples_to_ner_features(
                 - False (Default, BERT/XLM pattern): [CLS] + A + [SEP] + B + [SEP]
                 - True (XLNet/GPT pattern): A + [SEP] + B + [SEP] + [CLS]
         """
-
-        if args.max_seq_length is None:
-            max_length = tokenizer.max_len
-        else:
-            max_length = args.max_seq_length
-
         label_map = {label: i for i, label in enumerate(label_list)}
         id_to_label = {i: label for i, label in enumerate(label_list)}
 
@@ -199,13 +193,13 @@ def _convert_examples_to_ner_features(
             tokens = tokenizer.tokenize(example.text)
             inputs = tokenizer._encode_plus(
                 tokens,
-                max_length=max_length,
+                max_length=args.max_seq_length,
                 padding_strategy=PaddingStrategy.MAX_LENGTH,
             )
             label_ids = _process_target_sentence(
                 tokens=tokens,
                 target_sentence=example.label,
-                max_length=max_length,
+                max_length=args.max_seq_length,
                 label_map=label_map,
                 cls_token_at_end=cls_token_at_end,
             )

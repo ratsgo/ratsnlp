@@ -65,11 +65,6 @@ def _convert_examples_to_classification_features(
         args: TrainArguments,
         label_list: List[str],
 ):
-    if args.max_seq_length is None:
-        max_length = tokenizer.max_len
-    else:
-        max_length = args.max_seq_length
-
     label_map = {label: i for i, label in enumerate(label_list)}
     labels = [label_map[example.label] for example in examples]
 
@@ -79,7 +74,7 @@ def _convert_examples_to_classification_features(
     start = time.time()
     batch_encoding = tokenizer(
         [(example.text_a, example.text_b) for example in examples],
-        max_length=max_length,
+        max_length=args.max_seq_length,
         padding="max_length",
         truncation=True,
     )
