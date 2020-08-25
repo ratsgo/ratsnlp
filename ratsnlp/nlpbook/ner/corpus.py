@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from torch.utils.data.dataset import Dataset
 from transformers import PreTrainedTokenizer
 from ratsnlp.nlpbook.arguments import TrainArguments
-from transformers.tokenization_utils_base import PaddingStrategy
+from transformers.tokenization_utils_base import PaddingStrategy, TruncationStrategy
 
 
 logger = logging.getLogger(__name__)
@@ -194,6 +194,7 @@ def _convert_examples_to_ner_features(
             inputs = tokenizer._encode_plus(
                 tokens,
                 max_length=args.max_seq_length,
+                truncation_strategy=TruncationStrategy.LONGEST_FIRST,
                 padding_strategy=PaddingStrategy.MAX_LENGTH,
             )
             label_ids = _process_target_sentence(
