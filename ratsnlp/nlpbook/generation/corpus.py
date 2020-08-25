@@ -1,7 +1,7 @@
 import csv
 import logging
 from transformers import InputExample
-from ratsnlp.nlpbook.dataset import Corpus
+from ratsnlp.nlpbook.data_utils import Corpus
 
 
 logger = logging.getLogger(__name__)

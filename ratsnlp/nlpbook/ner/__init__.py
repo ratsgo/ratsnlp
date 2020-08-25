@@ -1,2 +1,2 @@
-from .corpus import LLYCorpus
 from .runner import Runner
+from .corpus import NERCorpus, NERDataset

@@ -16,7 +16,21 @@ REMOTE_DATA_MAP = {
             "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_test.txt",
             "fname": "val.txt",
         },
-    }
+    },
+    "ner": {
+        "train": {
+            "googledrive_file_id": "11Xgf4uU-neAsWnGSyumiQu3luOZtpxmP",
+            "fname": "train.txt",
+        },
+        "val": {
+            "googledrive_file_id": "1sGV-hfBzq0aUCtYSJwffBfjZGYLNfbQ3",
+            "fname": "val.txt",
+        },
+        "test": {
+            "googledrive_file_id": "1YIXkOz1YzFHvDiQb41ozpw3rEck_Dlco",
+            "fname": "test.txt",
+        },
+    },
 }
 
 REMOTE_MODEL_MAP = {
@@ -120,7 +134,7 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 def save_response_content(response, save_path):
     with open(save_path, "wb") as f:
         content_length = response.headers.get("Content-Length")
-        total = int(content_length)
+        total = int(content_length) if content_length is not None else None
         progress = tqdm.tqdm(
             unit="B",
             unit_scale=True,
