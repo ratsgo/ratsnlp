@@ -1,7 +1,8 @@
+import torch
 from torch import nn
+from torch.nn import CrossEntropyLoss
 from transformers.optimization import AdamW
 from pytorch_lightning import LightningModule
-from torch.nn import CrossEntropyLoss, MSELoss
 from ratsnlp.nlpbook.ner.corpus import NER_PAD_ID
 from ratsnlp.nlpbook.arguments import TrainArguments
 from transformers import BertPreTrainedModel, BertModel
@@ -44,24 +45,27 @@ class ModelForNER(BertPreTrainedModel):
             output_hidden_states=output_hidden_states,
         )
 
-        pooled_output = outputs[1]
+        sequence_output = outputs[0]
 
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
+        sequence_output = self.dropout(sequence_output)
+        logits = self.classifier(sequence_output)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
-
         if labels is not None:
-            if self.num_labels == 1:
-                #  We are doing regression
-                loss_fct = MSELoss()
-                loss = loss_fct(logits.view(-1), labels.view(-1))
+            loss_fct = CrossEntropyLoss(ignore_index=NER_PAD_ID)
+            # Only keep active parts of the loss
+            if attention_mask is not None:
+                active_loss = attention_mask.view(-1) == 1
+                active_logits = logits.view(-1, self.num_labels)
+                active_labels = torch.where(
+                    active_loss, labels.view(-1), torch.tensor(loss_fct.ignore_index).type_as(labels)
+                )
+                loss = loss_fct(active_logits, active_labels)
             else:
-                loss_fct = CrossEntropyLoss(ignore_index=NER_PAD_ID)
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
 
-        return outputs  # (loss), logits, (hidden_states), (attentions)
+        return outputs  # (loss), scores, (hidden_states), (attentions)
 
 
 class NERTask(LightningModule):
