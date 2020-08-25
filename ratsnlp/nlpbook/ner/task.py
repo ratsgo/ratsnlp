@@ -1,16 +1,73 @@
-from transformers import PreTrainedModel
+from torch import nn
 from transformers.optimization import AdamW
 from pytorch_lightning import LightningModule
+from torch.nn import CrossEntropyLoss, MSELoss
+from ratsnlp.nlpbook.ner.corpus import NER_PAD_ID
 from ratsnlp.nlpbook.arguments import TrainArguments
+from transformers import BertPreTrainedModel, BertModel
 from pytorch_lightning.metrics.classification import accuracy
 from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
 
+class ModelForNER(BertPreTrainedModel):
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.init_weights()
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        output_attentions=None,
+        output_hidden_states=None,
+    ):
+
+        outputs = self.bert(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+        )
+
+        pooled_output = outputs[1]
+
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+
+        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+
+        if labels is not None:
+            if self.num_labels == 1:
+                #  We are doing regression
+                loss_fct = MSELoss()
+                loss = loss_fct(logits.view(-1), labels.view(-1))
+            else:
+                loss_fct = CrossEntropyLoss(ignore_index=NER_PAD_ID)
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            outputs = (loss,) + outputs
+
+        return outputs  # (loss), logits, (hidden_states), (attentions)
+
+
 class NERTask(LightningModule):
 
     def __init__(self,
-                 model: PreTrainedModel,
+                 model: BertPreTrainedModel,
                  args: TrainArguments,
     ):
         super().__init__()
@@ -74,8 +131,7 @@ class NERTask(LightningModule):
         return self.epoch_end(outputs, mode="val")
 
     def test_epoch_end(self, outputs):
-        result = self.epoch_end(outputs, mode="test")
-        return {k: v.item() for k, v in result.items()}
+        return self.epoch_end(outputs, mode="test")
 
     def get_progress_bar_dict(self):
         running_train_loss = self.trainer.running_loss.mean()

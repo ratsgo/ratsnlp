@@ -74,8 +74,7 @@ class ClassificationTask(LightningModule):
         return self.epoch_end(outputs, mode="val")
 
     def test_epoch_end(self, outputs):
-        result = self.epoch_end(outputs, mode="test")
-        return {k: v.item() for k, v in result.items()}
+        return self.epoch_end(outputs, mode="test")
 
     def get_progress_bar_dict(self):
         running_train_loss = self.trainer.running_loss.mean()

@@ -17,6 +17,7 @@ NER_CLS_TOKEN = "[CLS]"
 NER_SEP_TOKEN = "[SEP]"
 NER_PAD_TOKEN = "[PAD]"
 NER_MASK_TOKEN = "[MASK]"
+NER_PAD_ID = 2
 
 
 @dataclass
