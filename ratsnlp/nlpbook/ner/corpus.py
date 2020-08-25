@@ -9,9 +9,14 @@ from dataclasses import dataclass
 from torch.utils.data.dataset import Dataset
 from transformers import PreTrainedTokenizer
 from ratsnlp.nlpbook.arguments import TrainArguments
+from transformers.tokenization_utils_base import PaddingStrategy
 
 
 logger = logging.getLogger(__name__)
+NER_CLS_TOKEN = "[CLS]"
+NER_SEP_TOKEN = "[SEP]"
+NER_PAD_TOKEN = "[PAD]"
+NER_MASK_TOKEN = "[MASK]"
 
 
 @dataclass
@@ -25,7 +30,7 @@ class NERFeatures:
     input_ids: List[int]
     attention_mask: Optional[List[int]] = None
     token_type_ids: Optional[List[int]] = None
-    label: Optional[List[int]] = None
+    label_ids: Optional[List[int]] = None
 
 
 class NERCorpus:
@@ -59,7 +64,7 @@ class NERCorpus:
                         ner_tags.append(ner_tag)
             b_tags = [f"B-{ner_tag}" for ner_tag in ner_tags]
             i_tags = [f"I-{ner_tag}" for ner_tag in ner_tags]
-            labels = ["[CLS]", "[SEP]", "[PAD]", "[MASK]", "O"] + b_tags + i_tags
+            labels = [NER_CLS_TOKEN, NER_SEP_TOKEN, NER_PAD_TOKEN, NER_MASK_TOKEN, "O"] + b_tags + i_tags
             with open(label_map_path, "w", encoding="utf-8") as f:
                 for tag in labels:
                     f.writelines(tag + "\n")
@@ -75,9 +80,8 @@ class NERCorpus:
 def _process_target_sentence(
         tokens: List[str],
         target_sentence: str,
+        max_length: int,
         label_map: dict,
-        cls_token: Optional[str] = "[CLS]",
-        sep_token: Optional[str] = "[SEP]",
         cls_token_at_end: Optional[bool] = False,
 ):
     """
@@ -150,10 +154,21 @@ def _process_target_sentence(
             entity_tag = 'O'
             label_sequence.append(entity_tag)
 
+    # truncation
+    label_sequence = label_sequence[:max_length - 2]
+
+    # add special tokens
     if cls_token_at_end:
-        label_sequence = label_sequence + [cls_token, sep_token]
+        label_sequence = label_sequence + [NER_CLS_TOKEN, NER_SEP_TOKEN]
     else:
-        label_sequence = [cls_token] + label_sequence + [sep_token]
+        label_sequence = [NER_CLS_TOKEN] + label_sequence + [NER_SEP_TOKEN]
+
+    # padding
+    pad_length = max(max_length - len(label_sequence), 0)
+    pad_sequence = [NER_PAD_TOKEN] * pad_length
+    label_sequence += pad_sequence
+
+    # encoding
     label_ids = [label_map[label] for label in label_sequence]
     return label_ids
 
@@ -182,23 +197,26 @@ def _convert_examples_to_ner_features(
         features = []
         for example in examples:
             tokens = tokenizer.tokenize(example.text)
-            inputs = tokenizer._encode_plus(tokens, max_length=max_length, padding="max_length")
-            label = _process_target_sentence(
+            inputs = tokenizer._encode_plus(
+                tokens,
+                max_length=max_length,
+                padding_strategy=PaddingStrategy.MAX_LENGTH,
+            )
+            label_ids = _process_target_sentence(
                 tokens=tokens,
                 target_sentence=example.label,
+                max_length=max_length,
                 label_map=label_map,
-                cls_token=tokenizer.cls_token,
-                sep_token=tokenizer.sep_token,
                 cls_token_at_end=cls_token_at_end,
             )
-            features.append(NERFeatures(**inputs, label=label))
+            features.append(NERFeatures(**inputs, label_ids=label_ids))
 
         for i, example in enumerate(examples[:5]):
             logger.info("*** Example ***")
             logger.info("sentence: %s" % (example.text))
             logger.info("target: %s" % (example.label))
             logger.info("tokens: %s" % (" ".join(tokenizer.convert_ids_to_tokens(features[i].input_ids))))
-            logger.info("label: %s" % (" ".join([id_to_label[label_id] for label_id in features[i].label])))
+            logger.info("label: %s" % (" ".join([id_to_label[label_id] for label_id in features[i].label_ids])))
             logger.info("features: %s" % features[i])
 
         return features
