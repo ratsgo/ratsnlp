@@ -1,2 +1,2 @@
 from .corpus import KorQuADCorpus
-from .runner import Runner
+from .task import QATask

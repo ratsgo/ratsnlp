@@ -1,2 +1,2 @@
-from .runner import Runner
+from .task import NERTask
 from .corpus import NERCorpus, NERDataset

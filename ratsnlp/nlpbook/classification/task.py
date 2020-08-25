@@ -7,7 +7,7 @@ from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
 
-class Runner(LightningModule):
+class ClassificationTask(LightningModule):
 
     def __init__(self,
                  model: PreTrainedModel,
@@ -84,3 +84,5 @@ class Runner(LightningModule):
             'tr_acc': '{:.3f}'.format(running_train_accuracy.cpu().item()),
         }
         return tqdm_dict
+
+

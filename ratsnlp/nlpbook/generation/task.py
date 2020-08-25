@@ -7,7 +7,7 @@ from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
 
-class Runner(LightningModule):
+class GenerationTask(LightningModule):
 
     def __init__(self,
                  model: PreTrainedModel,
