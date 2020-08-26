@@ -12,7 +12,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     package_data = {
-        'ratsnlp.nlpbook.classification': ['*.html']
+        'ratsnlp.nlpbook.classification': ['*.html'],
+        'ratsnlp.nlpbook.ner': ['*.html']
     },
     install_requires=[
         "torch>=1.5.1",
