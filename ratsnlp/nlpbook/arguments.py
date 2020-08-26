@@ -146,6 +146,10 @@ class DeployArguments:
         default=None,
         metadata={"help": "The output model checkpoint path."}
     )
+    downstream_model_labelmap_path: str = field(
+        default=None,
+        metadata={"help": "The output model label map path."}
+    )
     downstream_task_name: str = field(
         default=None,
         metadata={"help": "The name of the downstream task."}
