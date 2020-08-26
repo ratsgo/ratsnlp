@@ -1,5 +1,6 @@
 from transformers import PreTrainedModel
 from transformers.optimization import AdamW
+from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
 from ratsnlp.nlpbook.arguments import TrainArguments
 from pytorch_lightning.metrics.classification import accuracy
