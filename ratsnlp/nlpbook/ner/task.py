@@ -2,11 +2,11 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
 from transformers.optimization import AdamW
+from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
 from ratsnlp.nlpbook.ner.corpus import NER_PAD_ID
 from ratsnlp.nlpbook.arguments import TrainArguments
 from transformers import BertPreTrainedModel, BertModel
-from pytorch_lightning.metrics.classification import accuracy
 from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
@@ -102,7 +102,7 @@ class NERTask(LightningModule):
         loss, logits = self.model(**inputs)
         preds = logits.argmax(dim=-1)
         labels = inputs["labels"]
-        acc = accuracy(preds, labels)
+        acc = accuracy(preds, labels, ignore_index=NER_PAD_ID)
         self.running_accuracy.append(acc)
         logs = {f"{mode}_loss": loss, f"{mode}_acc": acc}
         return {"loss": loss, "log": logs}
