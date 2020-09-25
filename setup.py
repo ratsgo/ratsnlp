@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="ratsnlp",
-    version="0.0.8",
+    version="0.0.93",
     license='MIT',
     author="ratsgo",
     author_email="ratsgo@naver.com",
@@ -21,7 +21,7 @@ setuptools.setup(
         "transformers==3.0.2",
         "Korpora>=0.1.0",
         "flask==1.1.2",
-        "flask_cors==3.0.8",
+        "flask_ngrok>=0.0.25",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",

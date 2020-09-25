@@ -38,7 +38,7 @@ function api_call() {
     var input = $("#input").val();
     console.log(input);
     $.ajax({
-        url: "http://0.0.0.0:5000/api",
+        url: "/api",
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(input),

@@ -130,9 +130,9 @@ class TrainArguments:
 @dataclass
 class DeployArguments:
 
-    pretrained_model_cache_dir: str = field(
+    pretrained_model_name: str = field(
         default=None,
-        metadata={"help": "Where do you want to store the pretrained models downloaded from web"}
+        metadata={"help": "The name of the pretrained model"}
     )
     downstream_model_checkpoint_path: str = field(
         default=None,

@@ -1,11 +1,11 @@
-from flask_cors import CORS
+from flask_ngrok import run_with_ngrok
 from flask import Flask, request, jsonify, render_template
 
 
 def get_web_service_app(inference_fn):
 
     app = Flask(__name__, template_folder='')
-    CORS(app)
+    run_with_ngrok(app)
 
     @app.route('/')
     def index():
