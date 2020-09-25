@@ -19,27 +19,16 @@ def load_arguments(argument_class, json_file_path=None):
 class TrainArguments:
 
     pretrained_model_name: str = field(
-        default="kcbert-base",
+        default="beomi/kcbert-base",
         metadata={"help": "pretrained model name"}
-    )
-    pretrained_model_cache_dir: str = field(
-        default=None,
-        metadata={"help": "Where do you want to store the pretrained models downloaded from web"}
-    )
-    max_seq_length: int = field(
-        default=128,
-        metadata={
-            "help": "The maximum total input sequence length after tokenization. Sequences longer "
-                    "than this will be truncated, sequences shorter will be padded."
-        }
     )
     downstream_corpus_name: str = field(
         default=None,
         metadata={"help": "The name of the downstream data."}
     )
-    downstream_corpus_dir: str = field(
-        default=None,
-        metadata={"help": "The input corpus dir. Should contain the .txt files (or other data files) for the task."}
+    downstream_corpus_root_dir: str = field(
+        default="/root/Korpora",
+        metadata={"help": "The root directory of the downstream data."}
     )
     downstream_task_name: str = field(
         default=None,
@@ -48,6 +37,13 @@ class TrainArguments:
     downstream_model_dir: str = field(
         default=None,
         metadata={"help": "The output model dir."}
+    )
+    max_seq_length: int = field(
+        default=128,
+        metadata={
+            "help": "The maximum total input sequence length after tokenization. Sequences longer "
+                    "than this will be truncated, sequences shorter will be padded."
+        }
     )
     overwrite_model: bool = field(
         default=False,
@@ -64,10 +60,6 @@ class TrainArguments:
     seed: int = field(
         default=7,
         metadata={"help": "random seed."}
-    )
-    data_cache_dir: str = field(
-        default=None,
-        metadata={"help": "Where do you want to store the cached data"}
     )
     overwrite_cache: bool = field(
         default=False,

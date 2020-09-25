@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="ratsnlp",
-    version="0.0.5",
+    version="0.0.8",
     license='MIT',
     author="ratsgo",
     author_email="ratsgo@naver.com",
@@ -19,6 +19,7 @@ setuptools.setup(
         "torch>=1.5.1",
         "pytorch-lightning==0.8.5",
         "transformers==3.0.2",
+        "Korpora>=0.1.0",
         "flask==1.1.2",
         "flask_cors==3.0.8",
     ],

@@ -42,8 +42,7 @@ class NsmcCorpus:
         for (i, line) in enumerate(lines):
             if i == 0:
                 continue
-            text_a = line[1]
-            label = None if set_type == "test" else line[2]
+            _, text_a, label = line
             examples.append(ClassificationExample(text_a=text_a, text_b=None, label=label))
         return examples
 
@@ -116,7 +115,8 @@ class ClassificationDataset(Dataset):
             raise KeyError(f"mode({mode}) is not a valid split name")
         # Load data features from cache or dataset file
         cached_features_file = os.path.join(
-            args.data_cache_dir,
+            args.downstream_corpus_root_dir,
+            args.downstream_corpus_name,
             "cached_{}_{}_{}_{}_{}".format(
                 mode,
                 tokenizer.__class__.__name__,
@@ -138,8 +138,12 @@ class ClassificationDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                logger.info(f"Creating features from dataset file at {args.downstream_corpus_dir}")
-                corpus_fpath = os.path.join(args.downstream_corpus_dir, f"{mode}.txt")
+                corpus_fpath = os.path.join(
+                    args.downstream_corpus_root_dir,
+                    args.downstream_corpus_name,
+                    f"ratings_{mode}.txt"
+                )
+                logger.info(f"Creating features from dataset file at {corpus_fpath}")
                 examples = self.corpus.get_examples(corpus_fpath, mode)
                 self.features = convert_examples_to_features_fn(
                     examples,
