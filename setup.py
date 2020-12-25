@@ -16,8 +16,8 @@ setuptools.setup(
         'ratsnlp.nlpbook.ner': ['*.html']
     },
     install_requires=[
-        "torch>=1.5.1",
-        "pytorch-lightning==0.8.5",
+        "torch>=1.4.0",
+        "pytorch-lightning>=1.1.0",
         "transformers==3.0.2",
         "Korpora>=0.1.0",
         "flask==1.1.2",
