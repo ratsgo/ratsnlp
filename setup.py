@@ -22,6 +22,7 @@ setuptools.setup(
         "Korpora>=0.1.0",
         "flask==1.1.2",
         "flask_ngrok>=0.0.25",
+        "flask_cors>=3.0.9",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",
