@@ -17,7 +17,7 @@ setuptools.setup(
     },
     install_requires=[
         "torch>=1.4.0",
-        "pytorch-lightning>=1.1.0",
+        "pytorch-lightning==1.0.0",
         "transformers==3.0.2",
         "Korpora>=0.1.0",
         "flask==1.1.2",
