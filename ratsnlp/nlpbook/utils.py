@@ -4,6 +4,7 @@ import tqdm
 import logging
 import requests
 from transformers import set_seed
+from pytorch_lightning import _logger as lightning_logger
 
 
 REMOTE_DATA_MAP = {
@@ -275,6 +276,9 @@ def download_pretrained_model(args):
 
 
 def set_logger(args):
+    # 파이토치 라이트닝이 학습 초반부에 로그를 두 번씩 찍는 버그가 있어
+    # 이를 해결하기 위해 handler를 빈 리스트로 초기화한다
+    lightning_logger.handlers = []
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
