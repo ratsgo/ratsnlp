@@ -1,9 +1,11 @@
 import os
+import sys
 import json
 import tqdm
 import logging
 import requests
 from transformers import set_seed
+from transformers import HfArgumentParser
 from pytorch_lightning import _logger as lightning_logger
 
 
@@ -304,3 +306,14 @@ def check_exist_checkpoints(args):
 def seed_setting(args):
     set_seed(args.seed)
     logger.info(f"complete setting seed({args.seed})")
+
+
+def load_arguments(argument_class, json_file_path=None):
+    parser = HfArgumentParser(argument_class)
+    if json_file_path is not None:
+        args, = parser.parse_json_file(json_file=json_file_path)
+    elif len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        args, = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    else:
+        args, = parser.parse_args_into_dataclasses()
+    return args

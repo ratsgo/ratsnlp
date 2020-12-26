@@ -1,18 +1,5 @@
 import os
-import sys
 from dataclasses import dataclass, field
-from transformers import HfArgumentParser
-
-
-def load_arguments(argument_class, json_file_path=None):
-    parser = HfArgumentParser(argument_class)
-    if json_file_path is not None:
-        args, = parser.parse_json_file(json_file=json_file_path)
-    elif len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        args, = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    else:
-        args, = parser.parse_args_into_dataclasses()
-    return args
 
 
 @dataclass
@@ -30,10 +17,6 @@ class TrainArguments:
         default="/root/Korpora",
         metadata={"help": "The root directory of the downstream data."}
     )
-    downstream_task_name: str = field(
-        default=None,
-        metadata={"help": "The name of the downstream task."}
-    )
     downstream_model_dir: str = field(
         default=None,
         metadata={"help": "The output model dir."}
@@ -43,6 +26,25 @@ class TrainArguments:
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
+        }
+    )
+    doc_stride: int = field(
+        default=128,
+        metadata={
+            "help": "When splitting up a long document into chunks, how much stride to take between chunks."
+        }
+    )
+    max_query_length: int = field(
+        default=64,
+        metadata={
+            "help": "The maximum number of tokens for the question. Questions longer than this will "
+                    "be truncated to this length."
+        }
+    )
+    threads: int = field(
+        default=4,
+        metadata={
+            "help": "the number of threads, using for preprocessing"
         }
     )
     overwrite_model: bool = field(
@@ -124,6 +126,10 @@ class TrainArguments:
     stat_window_length: int = field(
         default=30,
         metadata={"help": "train statistics window length"}
+    )
+    tqdm_enabled: bool = field(
+        default=True,
+        metadata={"help": "do tqdn enabled or not"}
     )
 
 
