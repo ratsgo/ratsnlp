@@ -32,11 +32,7 @@ class QAExample:
     start_position_character: int
     # 지문 제목 : 임종석
     title: str
-    # 답변들 : ["1989년 2월 15일"]
-    answers: List[str]
     # 이하 정보는 데이터셋에 명시돼 있지 않고 가공해 얻는 추가 정보
-    # 지문에서 답변 불가능한지 여부 : False (answers 길이가 1 이상)
-    is_impossible: bool
     # doc_tokens : 지문(context)을 띄어쓰기로 분리한 리스트
     doc_tokens: List[str]
     # char_to_word_offset : 개별 음절이 몇 번째 어절에 속하는지 정보 (어절 끝에 붙은 공백은 현재 어절에 포함)
@@ -77,10 +73,8 @@ class KorQuADV1Corpus(QACorpus):
     def get_examples(self, corpus_dir, mode):
         examples = []
         if mode == "train":
-            is_training = True
             corpus_fpath = os.path.join(corpus_dir, self.train_file)
         else:
-            is_training = False
             if mode == "val":
                 corpus_fpath = os.path.join(corpus_dir, self.val_file)
             else:
@@ -93,10 +87,8 @@ class KorQuADV1Corpus(QACorpus):
                 for qa in paragraph["qas"]:
                     qas_id = qa["id"]
                     question_text = qa["question"]
-                    start_position_character, start_position, end_position, answer_text = None, None, None, None
                     answers, doc_tokens, char_to_word_offset = [], [], []
                     prev_is_whitespace = True
-
                     # Split on whitespace so that different tokens may be attributed to their original position.
                     for c in context_text:
                         if _is_whitespace(c):
@@ -108,32 +100,13 @@ class KorQuADV1Corpus(QACorpus):
                                 doc_tokens[-1] += c
                             prev_is_whitespace = False
                         char_to_word_offset.append(len(doc_tokens) - 1)
-
-                    if len(qa["answers"]) > 0:
-                        is_impossible = False
-                    else:
-                        is_impossible = True
-
-                    if not is_impossible:
-                        # train/validation 모두 정답 span 주기 위해
-                        answer = qa["answers"][0]
-                        answer_text = answer["text"]
-                        start_position_character = answer["answer_start"]
-                        # if is_training:
-                        #     # training set에서는 정답 답변이 하나뿐이다
-                        #     answer = qa["answers"][0]
-                        #     answer_text = answer["text"]
-                        #     start_position_character = answer["answer_start"]
-                        # else:
-                        #     # dev, valid set에서는 정답 답변이 복수일 수 있다
-                        #     answers = qa["answers"]
-
-                    if start_position_character is not None and not is_impossible:
-                        start_position = char_to_word_offset[start_position_character]
-                        end_position = char_to_word_offset[
-                            min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)
-                        ]
-
+                    answer = qa["answers"][0]
+                    answer_text = answer["text"]
+                    start_position_character = answer["answer_start"]
+                    start_position = char_to_word_offset[start_position_character]
+                    end_position = char_to_word_offset[
+                        min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)
+                    ]
                     example = QAExample(
                         qas_id=qas_id,
                         question_text=question_text,
@@ -141,8 +114,6 @@ class KorQuADV1Corpus(QACorpus):
                         answer_text=answer_text,
                         start_position_character=start_position_character,
                         title=title,
-                        is_impossible=is_impossible,
-                        answers=answers,
                         doc_tokens=doc_tokens,
                         char_to_word_offset=char_to_word_offset,
                         start_position=start_position,
@@ -214,25 +185,23 @@ def _new_check_is_max_context(doc_spans, cur_span_index, position):
     return cur_span_index == best_span_index
 
 
-def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_query_length, is_training):
+def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_query_length):
     features = []
-    if not example.is_impossible:
-    # if is_training and not example.is_impossible:
-        # Get start and end position
-        # 정답의 시작/끝 위치 : 어절 기준
-        start_position = example.start_position
-        end_position = example.end_position
+    # Get start and end position
+    # 정답의 시작/끝 위치 : 어절 기준
+    start_position = example.start_position
+    end_position = example.end_position
 
-        # If the answer cannot be found in the text, then skip this example.
-        # actual_text : 어절 단위 정답 스팬(대개 cleaned_answer_text을 포함한다), 예: 베토벤의 교향곡 9번을
-        actual_text = " ".join(example.doc_tokens[start_position:(end_position + 1)])
-        # cleaned_answer_text : 사람이 레이블한 정답 스팬, 베토벤의 교향곡 9번
-        cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text))
-        # actual_text가 cleaned_answer_text를 포함할 경우 0
-        # 그렇지 않을 경우 -1 (actual_text이 "베토벤 교향곡 9번" 등일 경우 이 케이스)
-        if actual_text.find(cleaned_answer_text) == -1:
-            logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
-            return []
+    # If the answer cannot be found in the text, then skip this example.
+    # actual_text : 어절 단위 정답 스팬(대개 cleaned_answer_text을 포함한다), 예: 베토벤의 교향곡 9번을
+    actual_text = " ".join(example.doc_tokens[start_position:(end_position + 1)])
+    # cleaned_answer_text : 사람이 레이블한 정답 스팬, 베토벤의 교향곡 9번
+    cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text))
+    # actual_text가 cleaned_answer_text를 포함할 경우 0
+    # 그렇지 않을 경우 -1 (actual_text이 "베토벤 교향곡 9번" 등일 경우 이 케이스)
+    if actual_text.find(cleaned_answer_text) == -1:
+        logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
+        return []
 
     # doc_tokens : context_text의 각 어절
     # all_doc_tokens는 doc_tokens의 각 어절별로 wordpiece를 수행한 토큰 리스트
@@ -262,21 +231,19 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
     # 따라서 아래 if문 안에서 처리를 해서 wordpiece상 정답 범위를 정한다
     # all_doc_tokens[tok_start_position:tok_end_position]
     # > ['베', '##토', '##벤', '##의', '교', '##향', '##곡', '9', '##번']
-    if not example.is_impossible:
-    # if is_training and not example.is_impossible:
-        # example.start_position : 정답 토큰의 시작이 context_text에서 몇 번째 어절에 있는지 정보
-        # example.end_position : 정답 토큰의 끝이 context_text에서 몇 번째 어절에 있는지 정보
-        # tok_start_position = context_text상 example.start_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
-        # tok_end_position = context_text상 example.end_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
-        tok_start_position = orig_to_tok_index[example.start_position]
-        if example.end_position < len(example.doc_tokens) - 1:
-            tok_end_position = orig_to_tok_index[example.end_position + 1] - 1
-        else:
-            tok_end_position = len(all_doc_tokens) - 1
+    # example.start_position : 정답 토큰의 시작이 context_text에서 몇 번째 어절에 있는지 정보
+    # example.end_position : 정답 토큰의 끝이 context_text에서 몇 번째 어절에 있는지 정보
+    # tok_start_position = context_text상 example.start_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
+    # tok_end_position = context_text상 example.end_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
+    tok_start_position = orig_to_tok_index[example.start_position]
+    if example.end_position < len(example.doc_tokens) - 1:
+        tok_end_position = orig_to_tok_index[example.end_position + 1] - 1
+    else:
+        tok_end_position = len(all_doc_tokens) - 1
 
-        (tok_start_position, tok_end_position) = _improve_answer_span(
-            all_doc_tokens, tok_start_position, tok_end_position, tokenizer, example.answer_text
-        )
+    (tok_start_position, tok_end_position) = _improve_answer_span(
+        all_doc_tokens, tok_start_position, tok_end_position, tokenizer, example.answer_text
+    )
 
     spans = []
 
@@ -394,31 +361,26 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
         # Set the cls index to 0: the CLS index can be used for impossible answers
         p_mask[cls_index] = 0
 
-        span_is_impossible = example.is_impossible
-        start_position = 0
-        end_position = 0
-        if not span_is_impossible:
-        # if is_training and not span_is_impossible:
-            # For training, if our document chunk does not contain an annotation
-            # we throw it out, since there is nothing to predict.
-            doc_start = span["start"]
-            doc_end = span["start"] + span["length"] - 1
-            out_of_span = False
+        # For training, if our document chunk does not contain an annotation
+        # we throw it out, since there is nothing to predict.
+        doc_start = span["start"]
+        doc_end = span["start"] + span["length"] - 1
+        out_of_span = False
 
-            if not (tok_start_position >= doc_start and tok_end_position <= doc_end):
-                out_of_span = True
+        if not (tok_start_position >= doc_start and tok_end_position <= doc_end):
+            out_of_span = True
 
-            if out_of_span:
-                start_position = cls_index
-                end_position = cls_index
+        if out_of_span:
+            start_position = cls_index
+            end_position = cls_index
+        else:
+            if tokenizer.padding_side == "left":
+                doc_offset = 0
             else:
-                if tokenizer.padding_side == "left":
-                    doc_offset = 0
-                else:
-                    doc_offset = len(truncated_query) + sequence_added_tokens
+                doc_offset = len(truncated_query) + sequence_added_tokens
 
-                start_position = tok_start_position - doc_start + doc_offset
-                end_position = tok_end_position - doc_start + doc_offset
+            start_position = tok_start_position - doc_start + doc_offset
+            end_position = tok_end_position - doc_start + doc_offset
 
         feature = QAFeatures(
             input_ids=span["input_ids"],
@@ -437,7 +399,6 @@ def _squad_convert_examples_to_features(
         examples: List[QAExample],
         tokenizer: PreTrainedTokenizer,
         args: QATrainArguments,
-        is_training: Optional[bool] = False,
 ):
     threads = min(args.threads, cpu_count())
     with Pool(threads, initializer=squad_convert_example_to_features_init, initargs=(tokenizer,)) as p:
@@ -446,7 +407,6 @@ def _squad_convert_examples_to_features(
             max_seq_length=args.max_seq_length,
             doc_stride=args.doc_stride,
             max_query_length=args.max_query_length,
-            is_training=is_training,
         )
         features = list(
             tqdm(
@@ -523,7 +483,7 @@ class QADataset(Dataset):
                 )
                 logger.info(f"Creating features from {mode} dataset file at {corpus_fpath}")
                 examples = self.corpus.get_examples(corpus_fpath, mode)
-                self.features = convert_examples_to_features_fn(examples, tokenizer,  args, mode)
+                self.features = convert_examples_to_features_fn(examples, tokenizer, args)
                 start = time.time()
                 logging.info(
                     "Saving features into cached file, it could take a lot of time..."
