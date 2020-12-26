@@ -39,7 +39,7 @@ class QATask(LightningModule):
         return self.model(**kwargs)
 
     def step(self, inputs, mode="train"):
-        loss, logits, _, _ = self.model(**inputs)
+        loss, logits, _ = self.model(**inputs)
         start_logits, end_logits = logits
         start_preds = start_logits.argmax(dim=-1)
         end_preds = end_logits.argmax(dim=-1)
