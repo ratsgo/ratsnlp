@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 from torch.utils.data.dataset import Dataset
 from transformers import PreTrainedTokenizer
-from ratsnlp.nlpbook.arguments import TrainArguments
+from ratsnlp.nlpbook.classification.arguments import ClassificationTrainArguments
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class NsmcCorpus:
 def _convert_examples_to_classification_features(
         examples: List[ClassificationExample],
         tokenizer: PreTrainedTokenizer,
-        args: TrainArguments,
+        args: ClassificationTrainArguments,
         label_list: List[str],
 ):
     label_map = {label: i for i, label in enumerate(label_list)}
@@ -101,7 +101,7 @@ class ClassificationDataset(Dataset):
 
     def __init__(
             self,
-            args: TrainArguments,
+            args: ClassificationTrainArguments,
             tokenizer: PreTrainedTokenizer,
             corpus: NsmcCorpus,
             mode: Optional[str] = "train",
@@ -122,7 +122,7 @@ class ClassificationDataset(Dataset):
                 tokenizer.__class__.__name__,
                 str(args.max_seq_length),
                 args.downstream_corpus_name,
-                args.downstream_task_name,
+                "document-classification",
             ),
         )
 

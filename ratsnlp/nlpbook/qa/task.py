@@ -2,7 +2,7 @@ from transformers import PreTrainedModel
 from transformers.optimization import AdamW
 from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
-from ratsnlp.nlpbook.arguments import TrainArguments
+from ratsnlp.nlpbook.qa import QATrainArguments
 from pytorch_lightning.metrics.classification import accuracy
 from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
@@ -12,7 +12,7 @@ class QATask(LightningModule):
 
     def __init__(self,
                  model: PreTrainedModel,
-                 args: TrainArguments,
+                 args: QATrainArguments,
     ):
         super().__init__()
         self.model = model

@@ -2,16 +2,16 @@ from transformers import PreTrainedModel
 from transformers.optimization import AdamW
 from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
-from ratsnlp.nlpbook.classification.arguments import TrainArguments
 from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
+from ratsnlp.nlpbook.classification.arguments import ClassificationTrainArguments
 
 
 class ClassificationTask(LightningModule):
 
     def __init__(self,
                  model: PreTrainedModel,
-                 args: TrainArguments,
+                 args: ClassificationTrainArguments,
     ):
         super().__init__()
         self.model = model

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class TrainArguments:
+class QATrainArguments:
 
     pretrained_model_name: str = field(
         default="beomi/kcbert-base",
@@ -134,7 +134,7 @@ class TrainArguments:
 
 
 @dataclass
-class DeployArguments:
+class QADeployArguments:
 
     pretrained_model_name: str = field(
         default=None,

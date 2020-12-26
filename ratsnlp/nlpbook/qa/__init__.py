@@ -1,3 +1,3 @@
+from .arguments import QATrainArguments, QADeployArguments
 from .task import QATask
-from .corpus import KorQuADCorpus
-from .arguments import TrainArguments, DeployArguments
+from .corpus import KorQuADV1Corpus, QADataset
