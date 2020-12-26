@@ -456,6 +456,14 @@ def _squad_convert_examples_to_features(
                 disable=not args.tqdm_enabled,
             )
         )
+    new_features = []
+    for feature in features:
+        if not feature:
+            continue
+        for f in feature:
+            new_features.append(f)
+    features = new_features
+    del new_features
 
     for i, example in enumerate(examples[:10]):
         logger.info("*** Example ***")
