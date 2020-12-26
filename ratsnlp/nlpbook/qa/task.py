@@ -39,10 +39,13 @@ class QATask(LightningModule):
         return self.model(**kwargs)
 
     def step(self, inputs, mode="train"):
-        loss, logits = self.model(**inputs)
-        preds = logits.argmax(dim=-1)
-        labels = inputs["labels"]
-        acc = accuracy(preds, labels)
+        loss, logits, _, _ = self.model(**inputs)
+        start_logits, end_logits = logits
+        start_preds = start_logits.argmax(dim=-1)
+        end_preds = end_logits.argmax(dim=-1)
+        start_positions = inputs["start_positions"]
+        end_positions = inputs["end_positions"]
+        acc = (accuracy(start_preds, start_positions) + accuracy(end_preds, end_positions)) / 2
         self.running_accuracy.append(acc)
         logs = {f"{mode}_loss": loss, f"{mode}_acc": acc}
         return {"loss": loss, "log": logs}

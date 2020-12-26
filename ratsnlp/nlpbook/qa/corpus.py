@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SquadExample:
+class QAExample:
     # 6548850-0-0
     qas_id: str
     # 질문 : 임종석이 여의도 농민 폭력 시위를 주도한 혐의로 지명수배 된 날은?
@@ -49,19 +49,25 @@ class SquadExample:
     end_position: int
 
 
-class KorQuADCorpus:
-
-    train_file = None
-    dev_file = None
-
-
 def _is_whitespace(c):
     if c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F:
         return True
     return False
 
 
-class KorQuADV1Corpus(KorQuADCorpus):
+class QACorpus:
+
+    def __init__(self):
+        pass
+
+    def get_examples(self, corpus_dir, mode):
+        """
+        :return: List[QAExample]
+        """
+        raise NotImplementedError
+
+
+class KorQuADV1Corpus(QACorpus):
 
     def __init__(self):
         super().__init__()
@@ -109,14 +115,18 @@ class KorQuADV1Corpus(KorQuADCorpus):
                         is_impossible = True
 
                     if not is_impossible:
-                        if is_training:
-                            # training set에서는 정답 답변이 하나뿐이다
-                            answer = qa["answers"][0]
-                            answer_text = answer["text"]
-                            start_position_character = answer["answer_start"]
-                        else:
-                            # dev, valid set에서는 정답 답변이 복수일 수 있다
-                            answers = qa["answers"]
+                        # train/validation 모두 정답 span 주기 위해
+                        answer = qa["answers"][0]
+                        answer_text = answer["text"]
+                        start_position_character = answer["answer_start"]
+                        # if is_training:
+                        #     # training set에서는 정답 답변이 하나뿐이다
+                        #     answer = qa["answers"][0]
+                        #     answer_text = answer["text"]
+                        #     start_position_character = answer["answer_start"]
+                        # else:
+                        #     # dev, valid set에서는 정답 답변이 복수일 수 있다
+                        #     answers = qa["answers"]
 
                     if start_position_character is not None and not is_impossible:
                         start_position = char_to_word_offset[start_position_character]
@@ -124,7 +134,7 @@ class KorQuADV1Corpus(KorQuADCorpus):
                             min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)
                         ]
 
-                    example = SquadExample(
+                    example = QAExample(
                         qas_id=qas_id,
                         question_text=question_text,
                         context_text=context_text,
@@ -145,7 +155,7 @@ class KorQuADV1Corpus(KorQuADCorpus):
 
 
 @dataclass
-class SquadFeatures:
+class QAFeatures:
     input_ids: List[int]
     attention_mask: Optional[List[int]] = None
     token_type_ids: Optional[List[int]] = None
@@ -206,7 +216,8 @@ def _new_check_is_max_context(doc_spans, cur_span_index, position):
 
 def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_query_length, is_training):
     features = []
-    if is_training and not example.is_impossible:
+    if not example.is_impossible:
+    # if is_training and not example.is_impossible:
         # Get start and end position
         # 정답의 시작/끝 위치 : 어절 기준
         start_position = example.start_position
@@ -251,7 +262,8 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
     # 따라서 아래 if문 안에서 처리를 해서 wordpiece상 정답 범위를 정한다
     # all_doc_tokens[tok_start_position:tok_end_position]
     # > ['베', '##토', '##벤', '##의', '교', '##향', '##곡', '9', '##번']
-    if is_training and not example.is_impossible:
+    if not example.is_impossible:
+    # if is_training and not example.is_impossible:
         # example.start_position : 정답 토큰의 시작이 context_text에서 몇 번째 어절에 있는지 정보
         # example.end_position : 정답 토큰의 끝이 context_text에서 몇 번째 어절에 있는지 정보
         # tok_start_position = context_text상 example.start_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
@@ -385,7 +397,8 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
         span_is_impossible = example.is_impossible
         start_position = 0
         end_position = 0
-        if is_training and not span_is_impossible:
+        if not span_is_impossible:
+        # if is_training and not span_is_impossible:
             # For training, if our document chunk does not contain an annotation
             # we throw it out, since there is nothing to predict.
             doc_start = span["start"]
@@ -398,7 +411,6 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
             if out_of_span:
                 start_position = cls_index
                 end_position = cls_index
-                span_is_impossible = True
             else:
                 if tokenizer.padding_side == "left":
                     doc_offset = 0
@@ -408,7 +420,7 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
                 start_position = tok_start_position - doc_start + doc_offset
                 end_position = tok_end_position - doc_start + doc_offset
 
-        feature = SquadFeatures(
+        feature = QAFeatures(
             input_ids=span["input_ids"],
             attention_mask=span["attention_mask"],
             token_type_ids=span["token_type_ids"],
@@ -422,7 +434,7 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
 
 
 def _squad_convert_examples_to_features(
-        examples: List[SquadExample],
+        examples: List[QAExample],
         tokenizer: PreTrainedTokenizer,
         args: QATrainArguments,
         is_training: Optional[bool] = False,
@@ -476,7 +488,7 @@ class QADataset(Dataset):
             self,
             args: QATrainArguments,
             tokenizer: PreTrainedTokenizer,
-            corpus: KorQuADCorpus,
+            corpus: QACorpus,
             mode: Optional[str] = "train",
             convert_examples_to_features_fn=_squad_convert_examples_to_features,
     ):
