@@ -3,7 +3,6 @@ import time
 import json
 import torch
 import logging
-import numpy as np
 from tqdm import tqdm
 from functools import partial
 from filelock import FileLock
@@ -20,8 +19,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class QAExample:
-    # 6548850-0-0
-    qas_id: str
     # 질문 : 임종석이 여의도 농민 폭력 시위를 주도한 혐의로 지명수배 된 날은?
     question_text: str
     # (답 찾는 대상인)지문 : 1989년 2월 15일 여의도 농민 폭력 시위를 주도한 혐의 ... 서울지방경찰청 공안분실로 인계되었다.
@@ -29,26 +26,7 @@ class QAExample:
     # 답변 : 1989년 2월 15일
     answer_text: str
     # 답변의 시작 위치(음절 수 기준) : 0
-    start_position_character: int
-    # 지문 제목 : 임종석
-    title: str
-    # 이하 정보는 데이터셋에 명시돼 있지 않고 가공해 얻는 추가 정보
-    # doc_tokens : 지문(context)을 띄어쓰기로 분리한 리스트
-    doc_tokens: List[str]
-    # char_to_word_offset : 개별 음절이 몇 번째 어절에 속하는지 정보 (어절 끝에 붙은 공백은 현재 어절에 포함)
-    # context_text="나는 학교에 갔었어."이고 doc_tokens가 ['나는', '학교에', '갔었어.']라면
-    # char_to_word_offset = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]
-    char_to_word_offset: List[int]
-    # 답변의 시작 위치(어절 수 기준)
-    start_position: int
-    # 답변의 끝 위치(어절 수 기준)
-    end_position: int
-
-
-def _is_whitespace(c):
-    if c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F:
-        return True
-    return False
+    start_position_character: Optional[int] = None
 
 
 class QACorpus:
@@ -74,54 +52,26 @@ class KorQuADV1Corpus(QACorpus):
         examples = []
         if mode == "train":
             corpus_fpath = os.path.join(corpus_dir, self.train_file)
+        elif mode == "val":
+            corpus_fpath = os.path.join(corpus_dir, self.val_file)
         else:
-            if mode == "val":
-                corpus_fpath = os.path.join(corpus_dir, self.val_file)
-            else:
-                raise KeyError(f"mode({mode}) is not a valid split name")
+            raise KeyError(f"mode({mode}) is not a valid split name")
         json_data = json.load(open(corpus_fpath, "r", encoding="utf-8"))["data"]
         for entry in tqdm(json_data):
-            title = entry["title"]
             for paragraph in entry["paragraphs"]:
                 context_text = paragraph["context"]
                 for qa in paragraph["qas"]:
-                    qas_id = qa["id"]
                     question_text = qa["question"]
-                    answers, doc_tokens, char_to_word_offset = [], [], []
-                    prev_is_whitespace = True
-                    # Split on whitespace so that different tokens may be attributed to their original position.
-                    for c in context_text:
-                        if _is_whitespace(c):
-                            prev_is_whitespace = True
-                        else:
-                            if prev_is_whitespace:
-                                doc_tokens.append(c)
-                            else:
-                                doc_tokens[-1] += c
-                            prev_is_whitespace = False
-                        char_to_word_offset.append(len(doc_tokens) - 1)
-                    answer = qa["answers"][0]
-                    answer_text = answer["text"]
-                    start_position_character = answer["answer_start"]
-                    start_position = char_to_word_offset[start_position_character]
-                    end_position = char_to_word_offset[
-                        min(start_position_character + len(answer_text) - 1, len(char_to_word_offset) - 1)
-                    ]
-                    example = QAExample(
-                        qas_id=qas_id,
-                        question_text=question_text,
-                        context_text=context_text,
-                        answer_text=answer_text,
-                        start_position_character=start_position_character,
-                        title=title,
-                        doc_tokens=doc_tokens,
-                        char_to_word_offset=char_to_word_offset,
-                        start_position=start_position,
-                        end_position=end_position,
-                    )
-
-                    examples.append(example)
-
+                    for answer in qa["answers"]:
+                        answer_text = answer["text"]
+                        start_position_character = answer["answer_start"]
+                        example = QAExample(
+                            question_text=question_text,
+                            context_text=context_text,
+                            answer_text=answer_text,
+                            start_position_character=start_position_character,
+                        )
+                        examples.append(example)
         return examples
 
 
@@ -136,12 +86,18 @@ class QAFeatures:
     end_positions: int
 
 
-def squad_convert_example_to_features_init(tokenizer_for_convert):
+def _squad_convert_example_to_features_init(tokenizer_for_convert):
     global tokenizer
     tokenizer = tokenizer_for_convert
 
 
-def whitespace_tokenize(text):
+def _is_whitespace(c):
+    if c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F:
+        return True
+    return False
+
+
+def _whitespace_tokenize(text):
     """Runs basic whitespace cleaning and splitting on a piece of text."""
     text = text.strip()
     if not text:
@@ -153,50 +109,43 @@ def whitespace_tokenize(text):
 def _improve_answer_span(doc_tokens, input_start, input_end, tokenizer, orig_answer_text):
     """Returns tokenized answer spans that better match the annotated answer."""
     tok_answer_text = " ".join(tokenizer.tokenize(orig_answer_text))
-
     for new_start in range(input_start, input_end + 1):
         for new_end in range(input_end, new_start - 1, -1):
             text_span = " ".join(doc_tokens[new_start : (new_end + 1)])
             if text_span == tok_answer_text:
-                return (new_start, new_end)
-
-    return (input_start, input_end)
-
-
-def _new_check_is_max_context(doc_spans, cur_span_index, position):
-    """Check if this is the 'max context' doc span for the token."""
-    # if len(doc_spans) == 1:
-    # return True
-    best_score = None
-    best_span_index = None
-    for (span_index, doc_span) in enumerate(doc_spans):
-        end = doc_span["start"] + doc_span["length"] - 1
-        if position < doc_span["start"]:
-            continue
-        if position > end:
-            continue
-        num_left_context = position - doc_span["start"]
-        num_right_context = end - position
-        score = min(num_left_context, num_right_context) + 0.01 * doc_span["length"]
-        if best_score is None or score > best_score:
-            best_score = score
-            best_span_index = span_index
-
-    return cur_span_index == best_span_index
+                return new_start, new_end
+    return input_start, input_end
 
 
 def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_query_length):
     features = []
+
+    doc_tokens, char_to_word_offset = [], []
+    prev_is_whitespace = True
+    # Split on whitespace so that different tokens may be attributed to their original position.
+    for c in example.context_text:
+        if _is_whitespace(c):
+            prev_is_whitespace = True
+        else:
+            if prev_is_whitespace:
+                doc_tokens.append(c)
+            else:
+                doc_tokens[-1] += c
+            prev_is_whitespace = False
+        char_to_word_offset.append(len(doc_tokens) - 1)
+
     # Get start and end position
     # 정답의 시작/끝 위치 : 어절 기준
-    start_position = example.start_position
-    end_position = example.end_position
+    start_position = char_to_word_offset[example.start_position_character]
+    end_position = char_to_word_offset[
+        min(example.start_position_character + len(example.answer_text) - 1, len(char_to_word_offset) - 1)
+    ]
 
     # If the answer cannot be found in the text, then skip this example.
     # actual_text : 어절 단위 정답 스팬(대개 cleaned_answer_text을 포함한다), 예: 베토벤의 교향곡 9번을
-    actual_text = " ".join(example.doc_tokens[start_position:(end_position + 1)])
+    actual_text = " ".join(doc_tokens[start_position:(end_position + 1)])
     # cleaned_answer_text : 사람이 레이블한 정답 스팬, 베토벤의 교향곡 9번
-    cleaned_answer_text = " ".join(whitespace_tokenize(example.answer_text))
+    cleaned_answer_text = " ".join(_whitespace_tokenize(example.answer_text))
     # actual_text가 cleaned_answer_text를 포함할 경우 0
     # 그렇지 않을 경우 -1 (actual_text이 "베토벤 교향곡 9번" 등일 경우 이 케이스)
     if actual_text.find(cleaned_answer_text) == -1:
@@ -219,7 +168,7 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
     tok_to_orig_index = []
     orig_to_tok_index = []
     all_doc_tokens = []
-    for (i, token) in enumerate(example.doc_tokens):
+    for (i, token) in enumerate(doc_tokens):
         orig_to_tok_index.append(len(all_doc_tokens))
         sub_tokens = tokenizer.tokenize(token)
         for sub_token in sub_tokens:
@@ -235,11 +184,11 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
     # example.end_position : 정답 토큰의 끝이 context_text에서 몇 번째 어절에 있는지 정보
     # tok_start_position = context_text상 example.start_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
     # tok_end_position = context_text상 example.end_position번째 어절이 all_doc_tokens에서 몇 번째 토큰인지 나타냄
-    tok_start_position = orig_to_tok_index[example.start_position]
-    if example.end_position < len(example.doc_tokens) - 1:
-        tok_end_position = orig_to_tok_index[example.end_position + 1] - 1
+    tok_start_position = orig_to_tok_index[start_position]
+    if end_position < len(doc_tokens) - 1:
+        tok_end_position = orig_to_tok_index[end_position + 1] - 1
     else:
-        tok_end_position = len(all_doc_tokens) - 1
+        tok_end_position = len(doc_tokens) - 1
 
     (tok_start_position, tok_end_position) = _improve_answer_span(
         all_doc_tokens, tok_start_position, tok_end_position, tokenizer, example.answer_text
@@ -261,7 +210,6 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
 
     span_doc_tokens = all_doc_tokens
     while len(spans) * doc_stride < len(all_doc_tokens):
-
         # padding_side = "right"라면 question + [SEP] + context으로 인코딩
         # padding_size = "left"라면 context + [SEP] + question으로 인코딩
         # truncated_query : token id sequence, List[int]
@@ -289,30 +237,6 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
             max_seq_length - len(truncated_query) - sequence_pair_added_tokens,
         )
 
-        if tokenizer.pad_token_id in encoded_dict["input_ids"]:
-            if tokenizer.padding_side == "right":
-                non_padded_ids = encoded_dict["input_ids"][: encoded_dict["input_ids"].index(tokenizer.pad_token_id)]
-            else:
-                last_padding_id_position = (
-                    len(encoded_dict["input_ids"]) - 1 - encoded_dict["input_ids"][::-1].index(tokenizer.pad_token_id)
-                )
-                non_padded_ids = encoded_dict["input_ids"][last_padding_id_position + 1 :]
-
-        else:
-            non_padded_ids = encoded_dict["input_ids"]
-
-        tokens = tokenizer.convert_ids_to_tokens(non_padded_ids)
-
-        token_to_orig_map = {}
-        for i in range(paragraph_len):
-            index = len(truncated_query) + sequence_added_tokens + i if tokenizer.padding_side == "right" else i
-            token_to_orig_map[index] = tok_to_orig_index[len(spans) * doc_stride + i]
-
-        encoded_dict["paragraph_len"] = paragraph_len
-        encoded_dict["tokens"] = tokens
-        encoded_dict["token_to_orig_map"] = token_to_orig_map
-        encoded_dict["truncated_query_with_special_tokens_length"] = len(truncated_query) + sequence_added_tokens
-        encoded_dict["token_is_max_context"] = {}
         encoded_dict["start"] = len(spans) * doc_stride
         encoded_dict["length"] = paragraph_len
 
@@ -328,39 +252,9 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
         # 동일한 question-context pair로부터 학습 인스턴스를 stride해 가며 여러 개를 복제
         span_doc_tokens = encoded_dict["overflowing_tokens"]
 
-    for doc_span_index in range(len(spans)):
-        for j in range(spans[doc_span_index]["paragraph_len"]):
-            is_max_context = _new_check_is_max_context(spans, doc_span_index, doc_span_index * doc_stride + j)
-            index = (
-                j
-                if tokenizer.padding_side == "left"
-                else spans[doc_span_index]["truncated_query_with_special_tokens_length"] + j
-            )
-            spans[doc_span_index]["token_is_max_context"][index] = is_max_context
-
     for span in spans:
         # Identify the position of the CLS token
         cls_index = span["input_ids"].index(tokenizer.cls_token_id)
-
-        # p_mask: mask with 1 for token than cannot be in the answer (0 for token which can be in an answer)
-        # Original TF implem also keep the classification token (set to 0)
-        p_mask = np.ones_like(span["token_type_ids"])
-        if tokenizer.padding_side == "right":
-            p_mask[len(truncated_query) + sequence_added_tokens :] = 0
-        else:
-            p_mask[-len(span["tokens"]) : -(len(truncated_query) + sequence_added_tokens)] = 0
-
-        pad_token_indices = np.where(span["input_ids"] == tokenizer.pad_token_id)
-        special_token_indices = np.asarray(
-            tokenizer.get_special_tokens_mask(span["input_ids"], already_has_special_tokens=True)
-        ).nonzero()
-
-        p_mask[pad_token_indices] = 1
-        p_mask[special_token_indices] = 1
-
-        # Set the cls index to 0: the CLS index can be used for impossible answers
-        p_mask[cls_index] = 0
-
         # For training, if our document chunk does not contain an annotation
         # we throw it out, since there is nothing to predict.
         doc_start = span["start"]
@@ -401,7 +295,7 @@ def _squad_convert_examples_to_features(
         args: QATrainArguments,
 ):
     threads = min(args.threads, cpu_count())
-    with Pool(threads, initializer=squad_convert_example_to_features_init, initargs=(tokenizer,)) as p:
+    with Pool(threads, initializer=_squad_convert_example_to_features_init, initargs=(tokenizer,)) as p:
         annotate_ = partial(
             _squad_convert_example_to_features,
             max_seq_length=args.max_seq_length,
