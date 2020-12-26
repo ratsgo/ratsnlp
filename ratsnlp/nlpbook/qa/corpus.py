@@ -456,22 +456,6 @@ def _squad_convert_examples_to_features(
                 disable=not args.tqdm_enabled,
             )
         )
-    new_features = []
-    unique_id = 1000000000
-    example_index = 0
-    for example_features in tqdm(
-            features, total=len(features), desc="add example index and unique id", disable=not args.tqdm_enabled
-    ):
-        if not example_features:
-            continue
-        for example_feature in example_features:
-            example_feature.example_index = example_index
-            example_feature.unique_id = unique_id
-            new_features.append(example_feature)
-            unique_id += 1
-        example_index += 1
-    features = new_features
-    del new_features
 
     for i, example in enumerate(examples[:10]):
         logger.info("*** Example ***")
