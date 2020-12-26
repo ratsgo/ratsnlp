@@ -238,19 +238,20 @@ def web_download(url,
 def download_downstream_dataset(args):
     data_name = args.downstream_corpus_name.lower()
     if data_name in REMOTE_DATA_MAP.keys():
+        cache_dir = os.path.join(args.downstream_corpus_root_dir, data_name)
         for value in REMOTE_DATA_MAP[data_name].values():
             if "web_url" in value.keys():
                 web_download(
                     url=value["web_url"],
                     save_fname=value["fname"],
-                    cache_dir=args.downstream_corpus_dir,
+                    cache_dir=cache_dir,
                     force_download=args.force_download,
                 )
             else:
                 google_download(
                     file_id=value["googledrive_file_id"],
                     save_fname=value["fname"],
-                    cache_dir=args.downstream_corpus_dir,
+                    cache_dir=cache_dir,
                     force_download=args.force_download
                 )
     else:
