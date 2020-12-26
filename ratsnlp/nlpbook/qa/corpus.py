@@ -66,7 +66,7 @@ class KorQuADV1Corpus(KorQuADCorpus):
     def __init__(self):
         super().__init__()
         self.train_file = "KorQuAD_v1.0_train.json"
-        self.dev_file = "KorQuAD_v1.0_dev.json"
+        self.val_file = "KorQuAD_v1.0_dev.json"
 
     def get_examples(self, corpus_dir, mode):
         examples = []
@@ -76,7 +76,7 @@ class KorQuADV1Corpus(KorQuADCorpus):
         else:
             is_training = False
             if mode == "val":
-                corpus_fpath = os.path.join(corpus_dir, self.dev_file)
+                corpus_fpath = os.path.join(corpus_dir, self.val_file)
             else:
                 raise KeyError(f"mode({mode}) is not a valid split name")
         json_data = json.load(open(corpus_fpath, "r", encoding="utf-8"))["data"]
@@ -144,46 +144,15 @@ class KorQuADV1Corpus(KorQuADCorpus):
         return examples
 
 
-# @dataclass
-# class SquadFullFeatures:
-#     input_ids: List[int]
-#     attention_mask: Optional[List[int]] = None
-#     token_type_ids: Optional[List[int]] = None
-#     # cls_index : CLS token의 인덱스
-#     cls_index: Optional[int] = None
-#     # p_mask : 해당 토큰이 답변 스팬에 포함되어 있는지 여부, 1이면 포함, 0이면 아님
-#     p_mask: Optional[List[int]] = None
-#     # example_index : 현재 example의 인덱스
-#     example_index: Optional[int] = None
-#     # unique_id : ?
-#     unique_id: int = None
-#     # paragraph_len : 지문(context)의 길이
-#     paragraph_len: Optional[int] = None
-#     # token_is_max_context : ?
-#     token_is_max_context: Optional[List[bool]] = None
-#     # tokens : input_ids에 대응하는 토큰 리스트
-#     tokens: Optional[List[str]] = None
-#     # token_to_orig_map : 정답 토큰 스팬
-#     token_to_orig_map: Optional[List[str]] = None
-#     # start_position : 지문상 시작 토큰 위치 (어절 기준)
-#     start_position: Optional[int] = None
-#     # end_position : 지문상 끝 토큰 위치 (어절 기준)
-#     end_position: Optional[int] = None
-#     # is_impossible : 현재 지문에서 답변을 찾을 수 있는지 여부
-#     is_impossible: Optional[bool] = False
-#     # qas_id : question & answer id
-#     qas_id: str = None
-
-
 @dataclass
 class SquadFeatures:
     input_ids: List[int]
     attention_mask: Optional[List[int]] = None
     token_type_ids: Optional[List[int]] = None
-    # start_position : 지문상 시작 토큰 위치 (어절 기준)
-    start_position: Optional[int] = None
-    # end_position : 지문상 끝 토큰 위치 (어절 기준)
-    end_position: Optional[int] = None
+    # start_positions : 지문상 시작 토큰 위치 (wordpiece 토큰 기준)
+    start_positions: Optional[int] = None
+    # end_position : 지문상 끝 토큰 위치 (wordpiece 토큰 기준)
+    end_positions: Optional[int] = None
 
 
 def squad_convert_example_to_features_init(tokenizer_for_convert):
@@ -307,6 +276,8 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
         if "roberta" in str(type(tokenizer)) or "camembert" in str(type(tokenizer))
         else tokenizer.max_len - tokenizer.max_len_single_sentence
     )
+
+    # [CLS] question [SEP] context [SEP] > 따라서 총 3개
     sequence_pair_added_tokens = tokenizer.max_len - tokenizer.max_len_sentences_pair
 
     span_doc_tokens = all_doc_tokens
@@ -316,6 +287,13 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
         # padding_size = "left"라면 context + [SEP] + question으로 인코딩
         # truncated_query : token id sequence, List[int]
         # span_doc_tokens : token sequence, List[str]
+        # encode_plus의 arg인 stride는 max_seq_length보다 길 경우
+        # truncated 실시한 토큰화 결과(input_ids)와 넘치는 토큰 시퀀스(overflowing_tokens)가
+        # 몇 개 토큰이 겹치게 만들 것인지를 정한다
+        # stride = 0이라면 이 둘 사이에 겹치는 토큰 = 0
+        # stride = max_seq_length라면 이 둘을 완전히 겹치게 만든다
+        # 다만 이 값을 정할 때 max_seq_length에서 TrainArguments의 doc_stride만큼을 빼주고 있으므로
+        # 다음 청크를 만들 때 doc_stride만큼 건너뛰는 효과가 있다
         encoded_dict = tokenizer.encode_plus(
             truncated_query if tokenizer.padding_side == "right" else span_doc_tokens,
             span_doc_tokens if tokenizer.padding_side == "right" else truncated_query,
@@ -430,29 +408,12 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
                 start_position = tok_start_position - doc_start + doc_offset
                 end_position = tok_end_position - doc_start + doc_offset
 
-        # feature = SquadFullFeatures(
-        #         span["input_ids"],
-        #         span["attention_mask"],
-        #         span["token_type_ids"],
-        #         cls_index,
-        #         p_mask.tolist(),
-        #         example_index=0,  # Can not set unique_id and example_index here. They will be set after multiple processing.
-        #         unique_id=0,
-        #         paragraph_len=span["paragraph_len"],
-        #         token_is_max_context=span["token_is_max_context"],
-        #         tokens=span["tokens"],
-        #         token_to_orig_map=span["token_to_orig_map"],
-        #         start_position=start_position,
-        #         end_position=end_position,
-        #         is_impossible=span_is_impossible,
-        #         qas_id=example.qas_id,
-        # )
         feature = SquadFeatures(
             input_ids=span["input_ids"],
             attention_mask=span["attention_mask"],
             token_type_ids=span["token_type_ids"],
-            start_position=start_position,
-            end_position=end_position,
+            start_positions=start_position,
+            end_positions=end_position,
         )
 
         features.append(feature)
@@ -500,39 +461,12 @@ def _squad_convert_examples_to_features(
     features = new_features
     del new_features
 
-    for i, example in enumerate(examples[:1000]):
+    for i, example in enumerate(examples[:10]):
         logger.info("*** Example ***")
         logger.info("question & context: %s" % (" ".join(tokenizer.convert_ids_to_tokens(features[i].input_ids))))
-        logger.info("answer: %s" % (" ".join(tokenizer.convert_ids_to_tokens(features[i].input_ids[features[i].start_position:features[i].end_position + 1]))))
-        # logger.info("features: %s" % features[i])
+        logger.info("answer: %s" % (" ".join(tokenizer.convert_ids_to_tokens(features[i].input_ids[features[i].start_positions:features[i].end_positions + 1]))))
+        logger.info("features: %s" % features[i])
 
-    # # Convert to Tensors and build dataset
-    # all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
-    # all_attention_masks = torch.tensor([f.attention_mask for f in features], dtype=torch.long)
-    # all_token_type_ids = torch.tensor([f.token_type_ids for f in features], dtype=torch.long)
-    # all_cls_index = torch.tensor([f.cls_index for f in features], dtype=torch.long)
-    # all_p_mask = torch.tensor([f.p_mask for f in features], dtype=torch.float)
-    # all_is_impossible = torch.tensor([f.is_impossible for f in features], dtype=torch.float)
-    #
-    # if not is_training:
-    #     all_feature_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
-    #     dataset = TensorDataset(
-    #         all_input_ids, all_attention_masks, all_token_type_ids, all_feature_index, all_cls_index, all_p_mask
-    #     )
-    # else:
-    #     all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
-    #     all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
-    #     dataset = TensorDataset(
-    #         all_input_ids,
-    #         all_attention_masks,
-    #         all_token_type_ids,
-    #         all_start_positions,
-    #         all_end_positions,
-    #         all_cls_index,
-    #         all_p_mask,
-    #         all_is_impossible,
-    #     )
-    # return features, dataset
     return features
 
 
@@ -556,10 +490,12 @@ class QADataset(Dataset):
         cached_features_file = os.path.join(
             args.downstream_corpus_root_dir,
             args.downstream_corpus_name,
-            "cached_{}_{}_{}_{}_{}".format(
+            "cached_{}_{}_{}_{}_{}_{}_{}".format(
                 mode,
                 tokenizer.__class__.__name__,
-                str(args.max_seq_length),
+                f"maxlen-{args.max_seq_length}",
+                f"maxquerylen-{args.max_query_length}",
+                f"docstride-{args.doc_stride}",
                 args.downstream_corpus_name,
                 "question-answering",
             ),

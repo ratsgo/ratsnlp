@@ -34,7 +34,7 @@ REMOTE_DATA_MAP = {
             "fname": "test.txt",
         },
     },
-    "korquad_v1": {
+    "korquad-v1": {
         "train": {
             "web_url": "https://korquad.github.io/dataset/KorQuAD_v1.0_train.json",
             "fname": "KorQuAD_v1.0_train.json",

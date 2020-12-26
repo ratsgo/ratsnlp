@@ -76,7 +76,7 @@ class QATrainArguments:
         metadata={"help": "Test Mode enables `fast_dev_run`"}
     )
     learning_rate: float = field(
-        default=5e-6,
+        default=5e-5,
         metadata={"help": "learning rate"}
     )
     optimizer: str = field(
@@ -153,9 +153,23 @@ class QADeployArguments:
         metadata={"help": "The name of the downstream task."}
     )
     max_seq_length: int = field(
-        default=128,
+        default=384,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
+        }
+    )
+    max_query_length: int = field(
+        default=64,
+        metadata={
+            "help": "The maximum number of tokens for the question. Questions longer than this will "
+                    "be truncated to this length."
+        }
+    )
+    max_answer_length: int = field(
+        default=30,
+        metadata={
+            "help": "The maximum length of an answer that can be generated. This is needed because the start "
+                    "and end predictions are not conditioned on one another."
         }
     )
