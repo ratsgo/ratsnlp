@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from typing import List, Optional
 from multiprocessing import Pool, cpu_count
 from transformers import PreTrainedTokenizer
+from torch.utils.data.dataset import Dataset
 from ratsnlp.nlpbook.qa.arguments import QATrainArguments
-from torch.utils.data.dataset import Dataset, TensorDataset
 
 
 logger = logging.getLogger(__name__)
@@ -128,12 +128,12 @@ class KorQuADV1Corpus(QACorpus):
 @dataclass
 class QAFeatures:
     input_ids: List[int]
-    attention_mask: Optional[List[int]] = None
-    token_type_ids: Optional[List[int]] = None
+    attention_mask: List[int]
+    token_type_ids: List[int]
     # start_positions : 지문상 시작 토큰 위치 (wordpiece 토큰 기준)
-    start_positions: Optional[int] = None
+    start_positions: int
     # end_position : 지문상 끝 토큰 위치 (wordpiece 토큰 기준)
-    end_positions: Optional[int] = None
+    end_positions: int
 
 
 def squad_convert_example_to_features_init(tokenizer_for_convert):
