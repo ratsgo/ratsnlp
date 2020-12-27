@@ -17,7 +17,7 @@ def _cosine_scores(questions: torch.Tensor, answers: torch.Tensor, eps: float = 
     return numerator / denominator
 
 
-class SearchModel(torch.nn.Module):
+class SearchModelForTrain(torch.nn.Module):
 
     def __init__(
             self,
@@ -51,9 +51,47 @@ class SearchModel(torch.nn.Module):
             attention_mask=passage_token_type_ids,
         )[1]
         scores = self.score_fn(question_embeddings, passage_embeddings)
-        if labels is not None:
-            softmax_scores = F.log_softmax(scores, dim=1)
-            loss = F.nll_loss(softmax_scores, labels, reduction='mean')
-            return loss, softmax_scores
-        else:
+        softmax_scores = F.log_softmax(scores, dim=1)
+        loss = F.nll_loss(softmax_scores, labels, reduction='mean')
+        return loss, softmax_scores
+
+
+class SearchModelForInference(torch.nn.Module):
+
+    def __init__(
+            self,
+            question_tower: PreTrainedModel,
+            passage_tower: PreTrainedModel,
+            score_fn=_cosine_scores,
+    ):
+        super().__init__()
+        self.question_tower = question_tower
+        self.passage_tower = passage_tower
+        self.score_fn = score_fn
+
+    def forward(
+            self,
+            question_input_ids=None,
+            question_attention_mask=None,
+            question_token_type_ids=None,
+            passage_input_ids=None,
+            passage_attention_mask=None,
+            passage_token_type_ids=None,
+            passage_embeddings=None,
+            mode="inference",
+    ):
+        if mode == "inference":
+            question_embeddings = self.question_tower(
+                input_ids=question_input_ids,
+                token_type_ids=question_token_type_ids,
+                attention_mask=question_attention_mask,
+            )[1]
+            scores = self.score_fn(question_embeddings, passage_embeddings)
             return scores
+        else:
+            passage_embeddings = self.passage_tower(
+                input_ids=passage_input_ids,
+                token_type_ids=passage_attention_mask,
+                attention_mask=passage_token_type_ids,
+            )[1]
+            return passage_embeddings

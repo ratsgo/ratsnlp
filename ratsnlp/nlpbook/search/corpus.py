@@ -181,9 +181,10 @@ class SearchDataset(Dataset):
                 self.features = features
             else:
                 passage_features = []
-                for el in features:
-                    _, passage_feature = el
-                    passage_features.append(passage_feature)
+                for _, features_in_a_group in features.items():
+                    for el in features_in_a_group:
+                        _, passage_feature = el
+                        passage_features.append(passage_feature)
                 self.features = passage_features
 
     def __len__(self):

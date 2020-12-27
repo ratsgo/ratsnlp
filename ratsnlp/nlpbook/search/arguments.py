@@ -1,4 +1,5 @@
 import os
+import torch
 from dataclasses import dataclass, field
 
 
@@ -22,7 +23,7 @@ class SearchTrainArguments:
         metadata={"help": "The output model dir."}
     )
     max_seq_length: int = field(
-        default=128,
+        default=48,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
@@ -69,11 +70,11 @@ class SearchTrainArguments:
         metadata={"help": "ExponentialLR or CosineAnnealingWarmRestarts"}
     )
     epochs: int = field(
-        default=20,
+        default=30,
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(
-        default=0,
+        default=32,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
     cpu_workers: int = field(
@@ -121,14 +122,38 @@ class SearchDeployArguments:
         default=None,
         metadata={"help": "The output model checkpoint path."}
     )
-    downstream_model_labelmap_path: str = field(
+    downstream_corpus_root_dir: str = field(
+        default="/root/Korpora",
+        metadata={"help": "The root directory of the downstream data."}
+    )
+    downstream_corpus_name: str = field(
         default=None,
-        metadata={"help": "The output model label map path."}
+        metadata={"help": "The name of the downstream data."}
+    )
+    overwrite_cache: bool = field(
+        default=False,
+        metadata={"help": "Overwrite the cached training and evaluation sets"}
+    )
+    batch_size: int = field(
+        default=32 if torch.cuda.is_available() else 1,
+        metadata={"help": "batch size when making inference data. "
+                          "if 0, Let PyTorch Lightening find the best batch size"
+        }
     )
     max_seq_length: int = field(
-        default=128,
+        default=48,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
         }
+    )
+    top_k: int = field(
+        default=5,
+        metadata={
+            "help": "show top-k cosine similarity results when inference."
+        }
+    )
+    cpu_workers: int = field(
+        default=2,
+        metadata={"help": "number of CPU workers when encoding"}
     )
