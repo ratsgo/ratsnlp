@@ -13,7 +13,8 @@ setuptools.setup(
     include_package_data=True,
     package_data = {
         'ratsnlp.nlpbook.classification': ['*.html'],
-        'ratsnlp.nlpbook.ner': ['*.html']
+        'ratsnlp.nlpbook.ner': ['*.html'],
+        'ratsnlp.nlpbook.qa': ['*.html'],
     },
     install_requires=[
         "torch>=1.4.0",
