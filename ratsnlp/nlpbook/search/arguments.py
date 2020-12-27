@@ -130,6 +130,10 @@ class SearchDeployArguments:
         default=None,
         metadata={"help": "The name of the downstream data."}
     )
+    passage_embedding_dir: str = field(
+        default=None,
+        metadata={"help": "the directory of passage embeddings."}
+    )
     overwrite_cache: bool = field(
         default=False,
         metadata={"help": "Overwrite the cached training and evaluation sets"}
