@@ -15,6 +15,7 @@ setuptools.setup(
         'ratsnlp.nlpbook.classification': ['*.html'],
         'ratsnlp.nlpbook.ner': ['*.html'],
         'ratsnlp.nlpbook.qa': ['*.html'],
+        'ratsnlp.nlpbook.search': ['*.html'],
     },
     install_requires=[
         "torch>=1.4.0",
