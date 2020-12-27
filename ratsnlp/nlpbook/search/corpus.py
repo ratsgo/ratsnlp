@@ -180,11 +180,15 @@ class SearchDataset(Dataset):
             if self.mode == "train":
                 self.features = features
             else:
+                passages = set()
                 passage_features = []
                 for _, features_in_a_group in features.items():
                     for el in features_in_a_group:
                         _, passage_feature = el
-                        passage_features.append(passage_feature)
+                        passage = " ".join([str(el) for el in passage_feature.input_ids])
+                        if passage not in passages:
+                            passage_features.append(passage_feature)
+                            passages.add(passage)
                 self.features = passage_features
 
     def __len__(self):
