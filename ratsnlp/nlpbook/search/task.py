@@ -50,12 +50,6 @@ class SearchTask(LightningModule):
     def training_step(self, inputs, batch_idx):
         return self.step(inputs, mode="train")
 
-    def validation_step(self, inputs, batch_idx):
-        return self.step(inputs, mode="val")
-
-    def test_step(self, inputs, batch_idx):
-        return self.step(inputs, mode="test")
-
     def epoch_end(self, outputs, mode="train"):
         loss_mean, acc_mean = 0, 0
         for output in outputs:
@@ -70,12 +64,6 @@ class SearchTask(LightningModule):
             'progress_bar': {f'{mode}_acc': acc_mean},
         }
         return results
-
-    def validation_epoch_end(self, outputs):
-        return self.epoch_end(outputs, mode="val")
-
-    def test_epoch_end(self, outputs):
-        return self.epoch_end(outputs, mode="test")
 
     def get_progress_bar_dict(self):
         running_train_loss = self.trainer.running_loss.mean()

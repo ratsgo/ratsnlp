@@ -106,12 +106,12 @@ def _convert_examples_to_search_features(
     return features
 
 
-def search_train_collator(positive_pairs: List[SearchPositivePair, SearchPositivePair]):
+def search_train_collator(positive_pairs):
     features = defaultdict(list)
-    for question_features, passage_features in positive_pairs:
-        for q_k, q_v in question_features.items():
+    for positive_pair in positive_pairs:
+        for q_k, q_v in vars(positive_pair.question_features).items():
             features[f"question_{q_k}"].append(q_v)
-        for p_k, p_v in passage_features.items():
+        for p_k, p_v in vars(positive_pair.passage_features).items():
             features[f"passage_{p_k}"].append(p_v)
     labels = [el for el in range(len(positive_pairs))]
     all_features = {k: torch.LongTensor(v) for k, v in {**features, "labels": labels}.items()}

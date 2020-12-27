@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from transformers import PreTrainedModel
 
 
@@ -44,15 +45,15 @@ class SearchModel(torch.nn.Module):
             token_type_ids=question_token_type_ids,
             attention_mask=question_attention_mask,
         )[1]
-        passage_embeddings = self.answer_tower(
+        passage_embeddings = self.passage_tower(
             input_ids=passage_input_ids,
             token_type_ids=passage_attention_mask,
             attention_mask=passage_token_type_ids,
         )[1]
         scores = self.score_fn(question_embeddings, passage_embeddings)
         if labels is not None:
-            softmax_scores = torch.nn.functional.F.log_softmax(scores, dim=1)
-            loss = torch.nn.functional.F.nll_loss(softmax_scores, labels, reduction='mean')
+            softmax_scores = F.log_softmax(scores, dim=1)
+            loss = F.nll_loss(softmax_scores, labels, reduction='mean')
             return loss, softmax_scores
         else:
             return scores
