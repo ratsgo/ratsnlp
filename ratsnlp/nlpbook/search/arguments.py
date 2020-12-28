@@ -22,10 +22,17 @@ class SearchTrainArguments:
         default=None,
         metadata={"help": "The output model dir."}
     )
-    max_seq_length: int = field(
-        default=48,
+    question_max_seq_length: int = field(
+        default=128,
         metadata={
-            "help": "The maximum total input sequence length after tokenization. Sequences longer "
+            "help": "The maximum question sequence length after tokenization. Sequences longer "
+                    "than this will be truncated, sequences shorter will be padded."
+        }
+    )
+    passage_max_seq_length: int = field(
+        default=256,
+        metadata={
+            "help": "The maximum question sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
         }
     )
@@ -58,7 +65,7 @@ class SearchTrainArguments:
         metadata={"help": "Test Mode enables `fast_dev_run`"}
     )
     learning_rate: float = field(
-        default=5e-6,
+        default=1e-5,
         metadata={"help": "learning rate"}
     )
     optimizer: str = field(
@@ -74,7 +81,7 @@ class SearchTrainArguments:
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(
-        default=32,
+        default=16,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
     cpu_workers: int = field(

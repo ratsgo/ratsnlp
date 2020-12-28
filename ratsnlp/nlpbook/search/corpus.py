@@ -1,9 +1,10 @@
 import os
+import json
 import time
 import torch
 import random
 import logging
-from Korpora import Korpora
+from tqdm import tqdm
 from filelock import FileLock
 from dataclasses import dataclass
 from typing import List, Optional
@@ -35,25 +36,48 @@ class SearchPositivePair:
     passage_features: SearchFeatures
 
 
-class KoreanChatbotDataCorpus:
+class SearchCorpus:
 
-    def get_examples(self, data_path):
-        corpus = Korpora.load(
-            "korean_chatbot_data",
-            root_dir=data_path,
-            force_download=False,
-        ).train
-        # korean chatbot data는 전체 데이터가 11823건
-        # unique한 쿼리가 11823건, 답변이 7779건이므로 답변 기준으로 그룹을 만든다
-        group = {answer: idx for idx, answer in enumerate(set([el.pair for el in corpus]))}
+    def __init__(self):
+        pass
+
+    def get_examples(self, corpus_dir, mode):
+        """
+        :return: List[SearchExample]
+        """
+        raise NotImplementedError
+
+
+class KorQuADV1Corpus(SearchCorpus):
+
+    def __init__(self):
+        super().__init__()
+        self.train_file = "KorQuAD_v1.0_train.json"
+        self.val_file = "KorQuAD_v1.0_dev.json"
+
+    def get_examples(self, corpus_dir, mode):
         examples = []
-        for el in corpus:
-            example = SearchExample(
-                question=el.text,
-                passage=el.pair,
-                group=group[el.pair]
-            )
-            examples.append(example)
+        if mode == "train":
+            corpus_fpath = os.path.join(corpus_dir, self.train_file)
+        elif mode == "val":
+            corpus_fpath = os.path.join(corpus_dir, self.val_file)
+        else:
+            raise KeyError(f"mode({mode}) is not a valid split name")
+        json_data = json.load(open(corpus_fpath, "r", encoding="utf-8"))["data"]
+        group_id = 0
+        for entry in tqdm(json_data):
+            for paragraph in entry["paragraphs"]:
+                context_text = paragraph["context"]
+                for qa in paragraph["qas"]:
+                    question_text = qa["question"]
+                    example = SearchExample(
+                        question=question_text,
+                        passage=context_text,
+                        group=group_id,
+                    )
+                    examples.append(example)
+                # context마다 그룹ID 부여
+                group_id += 1
         return examples
 
 
@@ -69,13 +93,13 @@ def _convert_examples_to_search_features(
     start = time.time()
     question_batch_encoding = tokenizer(
         [example.question for example in examples],
-        max_length=args.max_seq_length,
+        max_length=args.question_max_seq_length,
         padding="max_length",
         truncation=True,
     )
     passage_batch_encoding = tokenizer(
         [example.passage for example in examples],
-        max_length=args.max_seq_length,
+        max_length=args.passage_max_seq_length,
         padding="max_length",
         truncation=True,
     )
@@ -124,7 +148,7 @@ class SearchDataset(Dataset):
             self,
             args: SearchTrainArguments,
             tokenizer: PreTrainedTokenizer,
-            corpus: KoreanChatbotDataCorpus,
+            corpus: SearchCorpus,
             mode: Optional[str] = "train",
             convert_examples_to_features_fn=_convert_examples_to_search_features,
     ):
@@ -132,7 +156,7 @@ class SearchDataset(Dataset):
             self.corpus = corpus
         else:
             raise KeyError("corpus is not valid")
-        if not mode in ["train", "inference"]:
+        if not mode in ["train", "val", "inference"]:
             raise KeyError(f"mode({mode}) is not a valid split name")
         else:
             self.mode = mode
@@ -141,9 +165,11 @@ class SearchDataset(Dataset):
         cached_features_file = os.path.join(
             args.downstream_corpus_root_dir,
             args.downstream_corpus_name,
-            "cached_{}_{}_{}_{}".format(
+            "cached_{}_{}_query{}_passage{}_{}_{}".format(
+                mode,
                 tokenizer.__class__.__name__,
-                str(args.max_seq_length),
+                str(args.question_max_seq_length),
+                str(args.passage_max_seq_length),
                 args.downstream_corpus_name,
                 "document-search",
             ),
@@ -161,8 +187,9 @@ class SearchDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                logger.info(f"Creating features from dataset file at {args.downstream_corpus_root_dir}")
-                examples = self.corpus.get_examples(args.downstream_corpus_root_dir)
+                corpus_dir = os.path.join(args.downstream_corpus_root_dir, args.downstream_corpus_name)
+                logger.info(f"Creating features from {mode} dataset file at {corpus_dir}")
+                examples = self.corpus.get_examples(corpus_dir, mode)
                 features = convert_examples_to_features_fn(
                     examples,
                     tokenizer,
@@ -177,7 +204,7 @@ class SearchDataset(Dataset):
                     "Saving features into cached file %s [took %.3f s]", cached_features_file, time.time() - start
                 )
 
-            if self.mode == "train":
+            if self.mode in ["train", "val"]:
                 self.features = features
             else:
                 passages = set()
@@ -204,4 +231,5 @@ class SearchDataset(Dataset):
                 passage_features=passage_features,
             )
         else:
+            # val or inference
             return self.features[i]
