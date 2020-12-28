@@ -151,10 +151,17 @@ class SearchDeployArguments:
                           "if 0, Let PyTorch Lightening find the best batch size"
         }
     )
-    max_seq_length: int = field(
-        default=48,
+    question_max_seq_length: int = field(
+        default=32,
         metadata={
-            "help": "The maximum total input sequence length after tokenization. Sequences longer "
+            "help": "The maximum question sequence length after tokenization. Sequences longer "
+                    "than this will be truncated, sequences shorter will be padded."
+        }
+    )
+    passage_max_seq_length: int = field(
+        default=512,
+        metadata={
+            "help": "The maximum passage sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
         }
     )
