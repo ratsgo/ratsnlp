@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import torch
@@ -41,7 +42,7 @@ class SearchCorpus:
     def __init__(self):
         pass
 
-    def get_examples(self, corpus_dir, mode):
+    def get_examples(self, corpus_dir):
         """
         :return: List[SearchExample]
         """
@@ -55,18 +56,16 @@ class KorQuADV1Corpus(SearchCorpus):
         self.train_file = "KorQuAD_v1.0_train.json"
         self.val_file = "KorQuAD_v1.0_dev.json"
 
-    def get_examples(self, corpus_dir, mode):
+    def get_examples(self, corpus_dir):
         examples = []
-        if mode in ["train", "inference"]:
-            corpus_fpath = os.path.join(corpus_dir, self.train_file)
-        elif mode == "val":
-            corpus_fpath = os.path.join(corpus_dir, self.val_file)
-        else:
-            raise KeyError(f"mode({mode}) is not a valid split name")
-        json_data = json.load(open(corpus_fpath, "r", encoding="utf-8"))["data"]
+        train_corpus_fpath = os.path.join(corpus_dir, self.train_file)
+        val_corpus_fpath = os.path.join(corpus_dir, self.val_file)
+        json_train_data = json.load(open(train_corpus_fpath, "r", encoding="utf-8"))["data"]
+        json_val_data = json.load(open(val_corpus_fpath, "r", encoding="utf-8"))["data"]
+        json_data = json_train_data + json_val_data
         group_id, num_elements = 0, 0
         for entry in tqdm(json_data):
-            title = entry["title"]
+            title = re.sub(r'_|-|\(|\)|~', ' ', entry["title"]).strip()
             for paragraph in entry["paragraphs"]:
                 context_text = paragraph["context"]
                 for qa in paragraph["qas"]:
@@ -96,7 +95,6 @@ def _convert_examples_to_search_features(
         examples: List[SearchExample],
         tokenizer: PreTrainedTokenizer,
         args: SearchTrainArguments,
-        mode: Optional[str] = "train",
 ):
 
     logger.info(
@@ -168,7 +166,7 @@ class SearchDataset(Dataset):
             self.corpus = corpus
         else:
             raise KeyError("corpus is not valid")
-        if not mode in ["train", "val", "inference"]:
+        if not mode in ["train", "inference"]:
             raise KeyError(f"mode({mode}) is not a valid split name")
         else:
             self.mode = mode
@@ -177,8 +175,7 @@ class SearchDataset(Dataset):
         cached_features_file = os.path.join(
             args.downstream_corpus_root_dir,
             args.downstream_corpus_name,
-            "cached_{}_{}_query{}_passage{}_{}_{}".format(
-                mode,
+            "cached_{}_query{}_passage{}_{}_{}".format(
                 tokenizer.__class__.__name__,
                 str(args.question_max_seq_length),
                 str(args.passage_max_seq_length),
@@ -200,8 +197,8 @@ class SearchDataset(Dataset):
                 )
             else:
                 corpus_dir = os.path.join(args.downstream_corpus_root_dir, args.downstream_corpus_name)
-                logger.info(f"Creating features from {mode} dataset file at {corpus_dir}")
-                examples = self.corpus.get_examples(corpus_dir, mode)
+                logger.info(f"Creating features from dataset file at {corpus_dir}")
+                examples = self.corpus.get_examples(corpus_dir)
                 features = convert_examples_to_features_fn(
                     examples,
                     tokenizer,
@@ -218,11 +215,6 @@ class SearchDataset(Dataset):
 
             if self.mode == "train":
                 self.features = features
-            elif self.mode == "val":
-                self.features = []
-                for features_in_a_group in features.values():
-                    for el in features_in_a_group:
-                        self.features.append(el)
             else:
                 passages = set()
                 passage_features = []
@@ -243,12 +235,6 @@ class SearchDataset(Dataset):
             # i번째 그룹에서 포지티브 페어를 랜덤으로 하나 뽑는다
             all_features = random.sample(self.features[i], 1)[0]
             question_features, passage_features = all_features
-            return SearchPositivePair(
-                question_features=question_features,
-                passage_features=passage_features,
-            )
-        elif self.mode == "val":
-            question_features, passage_features = self.features[i]
             return SearchPositivePair(
                 question_features=question_features,
                 passage_features=passage_features,
