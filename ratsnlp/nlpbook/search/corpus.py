@@ -64,20 +64,24 @@ class KorQuADV1Corpus(SearchCorpus):
         else:
             raise KeyError(f"mode({mode}) is not a valid split name")
         json_data = json.load(open(corpus_fpath, "r", encoding="utf-8"))["data"]
-        group_id = 0
+        group_id, num_elements = 0, 0
         for entry in tqdm(json_data):
             for paragraph in entry["paragraphs"]:
                 context_text = paragraph["context"]
                 for qa in paragraph["qas"]:
                     question_text = qa["question"]
-                    example = SearchExample(
-                        question=question_text,
-                        passage=context_text,
-                        group=group_id,
-                    )
-                    examples.append(example)
+                    if question_text and context_text:
+                        example = SearchExample(
+                            question=question_text,
+                            passage=context_text,
+                            group=group_id,
+                        )
+                        examples.append(example)
+                        num_elements += 1
                 # context마다 그룹ID 부여
-                group_id += 1
+                if num_elements > 0:
+                    group_id += 1
+                    num_elements = 0
         return examples
 
 
