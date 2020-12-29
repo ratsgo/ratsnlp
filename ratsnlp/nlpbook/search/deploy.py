@@ -13,7 +13,7 @@ def encoding_passage(inference_dataloader, model, tokenizer, args):
             args.passage_embedding_dir,
             "passage-embeddings_{}_{}".format(
                 tokenizer.__class__.__name__,
-                str(args.max_seq_length),
+                str(args.passage_max_seq_length),
             ),
         )
     if os.path.exists(passage_embedding_fpath) and not args.overwrite_cache:

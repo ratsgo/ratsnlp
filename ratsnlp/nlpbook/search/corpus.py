@@ -57,9 +57,9 @@ class KorQuADV1Corpus(SearchCorpus):
 
     def get_examples(self, corpus_dir, mode):
         examples = []
-        if mode == "train":
+        if mode == ["train", "inference"]:
             corpus_fpath = os.path.join(corpus_dir, self.train_file)
-        elif mode == "val":
+        elif mode in "val":
             corpus_fpath = os.path.join(corpus_dir, self.val_file)
         else:
             raise KeyError(f"mode({mode}) is not a valid split name")
@@ -89,6 +89,7 @@ def _convert_examples_to_search_features(
         examples: List[SearchExample],
         tokenizer: PreTrainedTokenizer,
         args: SearchTrainArguments,
+        mode: Optional[str] = "train",
 ):
 
     logger.info(
