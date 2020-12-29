@@ -18,7 +18,7 @@ def encoding_passage(inference_dataloader, model, tokenizer, args):
         )
     if os.path.exists(passage_embedding_fpath) and not args.overwrite_cache:
         start = time.time()
-        all_passages, all_passage_embeddings = torch.load(passage_embedding_fpath)
+        all_passages, all_passage_embeddings = torch.load(passage_embedding_fpath, map_location=torch.device("cpu"))
         logger.info(
             f"Loading passage embeddings from cached file {passage_embedding_fpath} [took %.3f s]", time.time() - start
         )

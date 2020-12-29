@@ -66,18 +66,25 @@ class KorQuADV1Corpus(SearchCorpus):
         json_data = json.load(open(corpus_fpath, "r", encoding="utf-8"))["data"]
         group_id, num_elements = 0, 0
         for entry in tqdm(json_data):
+            title = entry["title"]
             for paragraph in entry["paragraphs"]:
                 context_text = paragraph["context"]
                 for qa in paragraph["qas"]:
                     question_text = qa["question"]
-                    if question_text and context_text:
+                    if title and question_text and context_text:
+                        example = SearchExample(
+                            question=title,
+                            passage=context_text,
+                            group=group_id,
+                        )
+                        examples.append(example)
                         example = SearchExample(
                             question=question_text,
                             passage=context_text,
                             group=group_id,
                         )
                         examples.append(example)
-                        num_elements += 1
+                        num_elements += 2
                 # context마다 그룹ID 부여
                 if num_elements > 0:
                     group_id += 1
