@@ -208,12 +208,17 @@ class SearchDataset(Dataset):
                     "Saving features into cached file %s [took %.3f s]", cached_features_file, time.time() - start
                 )
 
-            if self.mode in ["train", "val"]:
+            if self.mode == "train":
                 self.features = features
+            elif self.mode == "val":
+                self.features = []
+                for features_in_a_group in features.values():
+                    for el in features_in_a_group:
+                        self.features.append(el)
             else:
                 passages = set()
                 passage_features = []
-                for _, features_in_a_group in features.items():
+                for features_in_a_group in features.values():
                     for el in features_in_a_group:
                         _, passage_feature = el
                         passage = " ".join([str(el) for el in passage_feature.input_ids])
