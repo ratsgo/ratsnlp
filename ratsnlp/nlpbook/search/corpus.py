@@ -239,6 +239,12 @@ class SearchDataset(Dataset):
                 question_features=question_features,
                 passage_features=passage_features,
             )
+        elif self.mode == "val":
+            question_features, passage_features = self.features[i]
+            return SearchPositivePair(
+                question_features=question_features,
+                passage_features=passage_features,
+            )
         else:
-            # val or inference
+            # inference
             return self.features[i]

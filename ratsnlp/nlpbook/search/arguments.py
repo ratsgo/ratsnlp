@@ -65,7 +65,7 @@ class SearchTrainArguments:
         metadata={"help": "Test Mode enables `fast_dev_run`"}
     )
     learning_rate: float = field(
-        default=1e-5,
+        default=3e-5,
         metadata={"help": "learning rate"}
     )
     optimizer: str = field(
