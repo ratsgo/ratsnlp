@@ -23,7 +23,7 @@ class SearchTrainArguments:
         metadata={"help": "The output model dir."}
     )
     question_max_seq_length: int = field(
-        default=128,
+        default=32,
         metadata={
             "help": "The maximum question sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
@@ -77,11 +77,11 @@ class SearchTrainArguments:
         metadata={"help": "ExponentialLR or CosineAnnealingWarmRestarts"}
     )
     epochs: int = field(
-        default=30,
+        default=5,
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(
-        default=16,
+        default=32,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
     cpu_workers: int = field(
@@ -159,7 +159,7 @@ class SearchDeployArguments:
         }
     )
     passage_max_seq_length: int = field(
-        default=512,
+        default=256,
         metadata={
             "help": "The maximum passage sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."

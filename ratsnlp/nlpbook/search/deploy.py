@@ -33,6 +33,8 @@ def encoding_passage(inference_dataloader, model, tokenizer, args):
                 for input_ids in batch_input_ids:
                     input_ids = [el for el in input_ids if el not in special_tokens]
                     all_passages.append(tokenizer.decode(input_ids))
+                if torch.cuda.is_available():
+                    batch_inputs = {k: v.cuda() for k, v in batch_inputs.items()}
                 # passage_embeddings : args.batch_size x hidden_dimension
                 passage_embeddings = model(**{**{f"passage_{k}": v for k, v in batch_inputs.items()}, "mode": "encoding"})
                 all_passage_embeddings.append(passage_embeddings)

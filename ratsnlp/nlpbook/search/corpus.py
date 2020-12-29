@@ -57,9 +57,9 @@ class KorQuADV1Corpus(SearchCorpus):
 
     def get_examples(self, corpus_dir, mode):
         examples = []
-        if mode == ["train", "inference"]:
+        if mode in ["train", "inference"]:
             corpus_fpath = os.path.join(corpus_dir, self.train_file)
-        elif mode in "val":
+        elif mode == "val":
             corpus_fpath = os.path.join(corpus_dir, self.val_file)
         else:
             raise KeyError(f"mode({mode}) is not a valid split name")
