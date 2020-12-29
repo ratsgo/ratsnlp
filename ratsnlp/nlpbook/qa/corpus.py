@@ -65,13 +65,14 @@ class KorQuADV1Corpus(QACorpus):
                     for answer in qa["answers"]:
                         answer_text = answer["text"]
                         start_position_character = answer["answer_start"]
-                        example = QAExample(
-                            question_text=question_text,
-                            context_text=context_text,
-                            answer_text=answer_text,
-                            start_position_character=start_position_character,
-                        )
-                        examples.append(example)
+                        if question_text and answer_text and context_text and start_position_character:
+                            example = QAExample(
+                                question_text=question_text,
+                                context_text=context_text,
+                                answer_text=answer_text,
+                                start_position_character=start_position_character,
+                            )
+                            examples.append(example)
         return examples
 
 
