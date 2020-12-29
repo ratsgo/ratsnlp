@@ -137,6 +137,10 @@ class SearchDeployArguments:
         default=None,
         metadata={"help": "The name of the downstream data."}
     )
+    force_download: bool = field(
+        default=False,
+        metadata={"help": "force to download downstream data and pretrained models."}
+    )
     passage_embedding_dir: str = field(
         default=None,
         metadata={"help": "the directory of passage embeddings."}
@@ -144,6 +148,11 @@ class SearchDeployArguments:
     overwrite_cache: bool = field(
         default=False,
         metadata={"help": "Overwrite the cached training and evaluation sets"}
+    )
+    threshold: float = field(
+        default=0.95,
+        metadata={"help": "inference threshold."
+        }
     )
     batch_size: int = field(
         default=32 if torch.cuda.is_available() else 1,

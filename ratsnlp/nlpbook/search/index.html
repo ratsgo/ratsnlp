@@ -7,27 +7,30 @@
     <div class="card border-dark mb-3" style="min-width: 30rem; max-width: 50rem;">
       <div class="card-header">ratsgo's nlpbook</div>
       <div class="card-body text-dark">
-        <h5 class="card-title">질의/응답 (Question Answering)</h5>
-        <p class="card-text">지문(context)과 질문(question)이 주어졌을 때 질문에 적절한 답을 지문에서 찾습니다.</p>
-          <div class="input-group mb-3">
-            <span class="input-group-text">context</span>
-            <input type="text" class="form-control" aria-describedby="basic-addon3" id="context" name="context" placeholder="지문을 입력하세요"/>
-          </div>
+        <h5 class="card-title">문서 검색 (Document Search)</h5>
+        <p class="card-text">질문(question)이 주어졌을 때 질문과 관련성이 있는 문서(passage)를 찾습니다.</p>
           <div class="input-group mb-3">
             <span class="input-group-text">question</span>
-            <input type="text" class="form-control" aria-describedby="basic-addon3" id="question" name="question" placeholder="질문을 입력하세요"/>
-            <button class="btn btn-outline-secondary" type="button" onclick="api_call();"  id="button-addon2">답 찾기</button>
+            <input type="text" class="form-control" aria-describedby="basic-addon3" onkeypress="if(event.keyCode==13) {api_call(); return false;}" id="question" name="question" placeholder="질문을 입력하세요"/>
+            <button class="btn btn-outline-secondary" type="button" d="button-addon2">답 찾기</button>
           </div>
         <hr>
         <p class="card-text">
-            <dl class="row">
-              <dt class="col-sm-3">context</dt>
-              <dd class="col-sm-9" id="processed-context"></dd>
-              <dt class="col-sm-3">question</dt>
-              <dd class="col-sm-9" id="processed-question"></dd>
-              <dt class="col-sm-3">answer</dt>
-              <dd class="col-sm-9" id="answer"></dd>
-            </dl>
+            <div class="alert alert-info" role="alert">
+                <h5 id="prediction" class="alert-heading">Question</h5>
+                <p id="processed-question" class="mb-0"></p>
+            </div>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th scope="col" style="min-width: 4rem">랭킹</th>
+                  <th scope="col">문서</th>
+                  <th scope="col">점수</th>
+                </tr>
+              </thead>
+              <tbody id="my-tbody">
+              </tbody>
+            </table>
         </p>
         <hr>
         <p class="card-text">
@@ -42,8 +45,7 @@
 <script>
 function api_call() {
     var q = $("#question").val();
-    var c = $("#context").val();
-    var data = {question: q, context: c};
+    var data = {question: q};
     console.log(data);
     $.ajax({
         url: "/api",
@@ -51,14 +53,13 @@ function api_call() {
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: function( data, textStatus, jQxhr ){
-            $('#processed-context').html( data.context );
             $('#processed-question').html( data.question );
-            $('#answer').html( data.answer );
-            $("#context").val("");
+            $("#my-tbody").html("");
+            for (i = 0; i < data.results.length; i++)
+            $("#my-tbody").append("<tr><td>" + i + "</td><td>" + data.results[i]['passage'] + "</td><td>" + data.results[i]['score'] + "</td></tr>");
             $("#question").val("");
         },
         error: function( jqXhr, textStatus, errorThrown ){
-            $('#api_output').html( "There was an error" );
             console.log( errorThrown );
         },
         timeout: 3000
