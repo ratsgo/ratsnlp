@@ -22,16 +22,12 @@ REMOTE_DATA_MAP = {
     },
     "ner": {
         "train": {
-            "googledrive_file_id": "11Xgf4uU-neAsWnGSyumiQu3luOZtpxmP",
+            "googledrive_file_id": "1Go8AWhli7KtBpOz3iloaDpwGbGqmMsBP",
             "fname": "train.txt",
         },
         "val": {
-            "googledrive_file_id": "1sGV-hfBzq0aUCtYSJwffBfjZGYLNfbQ3",
+            "googledrive_file_id": "1bEPNWT5952rD3xjg0LfJBy3hLHry3yUL",
             "fname": "val.txt",
-        },
-        "test": {
-            "googledrive_file_id": "1YIXkOz1YzFHvDiQb41ozpw3rEck_Dlco",
-            "fname": "test.txt",
         },
     },
     "korquad-v1": {

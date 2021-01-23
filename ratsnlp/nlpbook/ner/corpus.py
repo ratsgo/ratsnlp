@@ -8,11 +8,15 @@ from typing import List, Optional
 from dataclasses import dataclass
 from torch.utils.data.dataset import Dataset
 from transformers import PreTrainedTokenizer
-from ratsnlp.nlpbook.arguments import TrainArguments
+from ratsnlp.nlpbook.ner import NERTrainArguments
 from transformers.tokenization_utils_base import PaddingStrategy, TruncationStrategy
 
 
 logger = logging.getLogger(__name__)
+
+# 자체 제작 NER 코퍼스 기준의 레이블 시퀀스를 만들기 위한 ID 체계
+# 나 는 삼성 에 입사 했다
+# O O 기관 O O O > [CLS] O O 기관 O O O [SEP] [PAD] [PAD] ...
 NER_CLS_TOKEN = "[CLS]"
 NER_SEP_TOKEN = "[SEP]"
 NER_PAD_TOKEN = "[PAD]"
@@ -36,7 +40,10 @@ class NERFeatures:
 
 class NERCorpus:
 
-    def __init__(self, args: TrainArguments):
+    def __init__(
+            self,
+            args: NERTrainArguments
+    ):
         self.args = args
 
     def get_examples(self, data_path, mode):
@@ -48,13 +55,20 @@ class NERCorpus:
         return examples
 
     def get_labels(self):
-        label_map_path = os.path.join(self.args.downstream_model_dir, "label_map.txt")
+        label_map_path = os.path.join(
+            self.args.downstream_model_dir,
+            "label_map.txt",
+        )
         if not os.path.exists(label_map_path):
             logging.info("processing NER tag dictionary...")
             os.makedirs(self.args.downstream_model_dir, exist_ok=True)
             ner_tags = []
             regex_ner = re.compile('<(.+?):[A-Z]{3}>')
-            train_corpus_path = os.path.join(self.args.downstream_corpus_dir, "train.txt")
+            train_corpus_path = os.path.join(
+                self.args.downstream_corpus_root_dir,
+                self.args.downstream_corpus_name,
+                "train.txt",
+            )
             target_sentences = [line.split("\u241E")[1].strip()
                                 for line in open(train_corpus_path, "r", encoding="utf-8").readlines()]
             for target_sentence in target_sentences:
@@ -177,7 +191,7 @@ def _process_target_sentence(
 def _convert_examples_to_ner_features(
         examples: List[NERExample],
         tokenizer: PreTrainedTokenizer,
-        args: TrainArguments,
+        args: NERTrainArguments,
         label_list: List[str],
         cls_token_at_end: Optional[bool] = False,
     ):
@@ -222,7 +236,7 @@ class NERDataset(Dataset):
 
     def __init__(
             self,
-            args: TrainArguments,
+            args: NERTrainArguments,
             tokenizer: PreTrainedTokenizer,
             corpus: NERCorpus,
             mode: Optional[str] = "train",
@@ -236,7 +250,8 @@ class NERDataset(Dataset):
             raise KeyError(f"mode({mode}) is not a valid split name")
         # Load data features from cache or dataset file
         cached_features_file = os.path.join(
-            args.data_cache_dir,
+            args.downstream_corpus_root_dir,
+            args.downstream_corpus_name,
             "cached_{}_{}_{}_{}_{}".format(
                 mode,
                 tokenizer.__class__.__name__,
@@ -258,8 +273,12 @@ class NERDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                logger.info(f"Creating features from dataset file at {args.downstream_corpus_dir}")
-                corpus_fpath = os.path.join(args.downstream_corpus_dir, f"{mode}.txt")
+                corpus_fpath = os.path.join(
+                    args.downstream_corpus_root_dir,
+                    args.downstream_corpus_name,
+                    f"{mode}.txt",
+                )
+                logger.info(f"Creating features from dataset file at {corpus_fpath}")
                 examples = self.corpus.get_examples(corpus_fpath, mode)
                 self.features = convert_examples_to_features_fn(
                     examples,
