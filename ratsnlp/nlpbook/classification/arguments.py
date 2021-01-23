@@ -9,6 +9,10 @@ class ClassificationTrainArguments:
         default="beomi/kcbert-base",
         metadata={"help": "pretrained model name"}
     )
+    downstream_task_name: str = field(
+        default="document-classification",
+        metadata={"help": "The name of the downstream data."}
+    )
     downstream_corpus_name: str = field(
         default=None,
         metadata={"help": "The name of the downstream data."}

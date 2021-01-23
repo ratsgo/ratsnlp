@@ -46,9 +46,10 @@ class NsmcCorpus:
             examples.append(ClassificationExample(text_a=text_a, text_b=None, label=label))
         return examples
 
-    def get_examples(self, data_path, mode):
-        logger.info(f"loading {mode} data... LOOKING AT {data_path}")
-        return self._create_examples(self._read_corpus(data_path), mode)
+    def get_examples(self, data_root_path, mode):
+        data_fpath = os.path.join(data_root_path, f"ratings_{mode}.txt")
+        logger.info(f"loading {mode} data... LOOKING AT {data_fpath}")
+        return self._create_examples(self._read_corpus(data_fpath), mode)
 
     def get_labels(self):
         return ["0", "1"]
@@ -89,7 +90,11 @@ def _convert_examples_to_classification_features(
 
     for i, example in enumerate(examples[:5]):
         logger.info("*** Example ***")
-        logger.info("sentence: %s" % (example.text_a))
+        if example.text_b is None:
+            logger.info("sentence: %s" % (example.text_a))
+        else:
+            sentence = example.text_a + " + " + example.text_b
+            logger.info("sentence A, B: %s" % (sentence))
         logger.info("tokens: %s" % (" ".join(tokenizer.convert_ids_to_tokens(features[i].input_ids))))
         logger.info("label: %s" % (example.label))
         logger.info("features: %s" % features[i])
@@ -103,7 +108,7 @@ class ClassificationDataset(Dataset):
             self,
             args: ClassificationTrainArguments,
             tokenizer: PreTrainedTokenizer,
-            corpus: NsmcCorpus,
+            corpus,
             mode: Optional[str] = "train",
             convert_examples_to_features_fn=_convert_examples_to_classification_features,
     ):
@@ -122,7 +127,7 @@ class ClassificationDataset(Dataset):
                 tokenizer.__class__.__name__,
                 str(args.max_seq_length),
                 args.downstream_corpus_name,
-                "document-classification",
+                args.downstream_task_name,
             ),
         )
 
@@ -138,13 +143,12 @@ class ClassificationDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                corpus_fpath = os.path.join(
+                corpus_path = os.path.join(
                     args.downstream_corpus_root_dir,
                     args.downstream_corpus_name,
-                    f"ratings_{mode}.txt"
                 )
-                logger.info(f"Creating features from dataset file at {corpus_fpath}")
-                examples = self.corpus.get_examples(corpus_fpath, mode)
+                logger.info(f"Creating features from dataset file at {corpus_path}")
+                examples = self.corpus.get_examples(corpus_path, mode)
                 self.features = convert_examples_to_features_fn(
                     examples,
                     tokenizer,
