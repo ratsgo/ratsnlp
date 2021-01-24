@@ -17,8 +17,8 @@ def get_web_service_app(inference_fn, is_colab=True):
 
     @app.route('/api', methods=['POST'])
     def api():
-        query_sentence = request.json
-        output_data = inference_fn(query_sentence)
+        query = request.json
+        output_data = inference_fn(query["premise"], query["hypothesis"])
         response = jsonify(output_data)
         return response
 

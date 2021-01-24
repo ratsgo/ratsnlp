@@ -1,0 +1,72 @@
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body style="margin: 30;">
+    <div class="card border-dark mb-3" style="min-width: 30rem; max-width: 30rem;">
+      <div class="card-header">ratsgo's nlpbook</div>
+      <div class="card-body text-dark">
+        <h5 class="card-title">자연어 추론 (Natural Language Inference)</h5>
+        <p class="card-text">진술(premise)에 대한 가설(hypothesis)이 참(entailment), 거짓(contradiction), 중립(neutral)인지 판단합니다.</p>
+        <div class="input-group mb-3">
+            <span class="input-group-text">진술</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon3" id="premise" name="premise" placeholder="진술을 입력하세요"/>
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">가설</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon3" id="hypothesis" name="hypothesis" placeholder="위 진술에 대한 가설을 입력하세요"/>
+            <button class="btn btn-outline-secondary" type="button" onclick="api_call();" id="button">입력</button>
+        </div>
+        <p class="card-text">
+          <div class="alert alert-secondary" role="alert">
+              <h6 class="alert-heading">진술</h6>
+              <p id="processed-premise" class="mb-0"></p>
+          </div>
+          <div class="alert alert-primary" role="alert">
+              <h6 class="alert-heading">가설</h6>
+              <p id="processed-hypothesis" class="mb-0"></p>
+          </div>
+        </p>
+        <div class="progress">
+          <div id="entailment" class="progress-bar bg-success" role="progressbar" style="width: 100%">참 1</div>
+          <div id="contradiction" class="progress-bar bg-danger" role="progressbar" style="width: 0%">거짓 0</div>
+          <div id="neutral" class="progress-bar bg-warning" role="progressbar" style="width: 0%">중립 0</div>
+        </div>
+        <hr>
+        <p class="card-text"><small class="text-muted">이 웹 데모가 어떻게 동작하는지 자세히 확인하고 싶으신 분은 <a href="https://ratsgo.github.io/nlpbook/docs/classification">ratsgo's nlpbook</a>을 참고하세요. Copyright &copy; 2020 </b><a href="https://ratsgo.github.io/about">Gichang LEE.</a> Distributed by an <a href="https://github.com/ratsgo/nlpbook/tree/master/LICENSE">CC BY-NC-SA 3.0 license.</a></small></p>
+      </div>
+    </div>
+</body>
+
+<script>
+function api_call() {
+    var p = $("#premise").val();
+    var h = $("#hypothesis").val();
+    var input = {premise: p, hypothesis: h};
+    console.log(input);
+    $.ajax({
+        url: "/api",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(input),
+        success: function( data, textStatus, jQxhr ){
+            $('#processed-premise').html( data.premise );
+            $('#processed-hypothesis').html( data.hypothesis );
+            $('#entailment').html( data.entailment_data );
+            $('#contradiction').html( data.contradiction_data );
+            $('#neutral').html( data.neutral_data );
+            $('#entailment').css('width', data.entailment_width);
+            $('#contradiction').css('width', data.contradiction_width);
+            $('#neutral').css('width', data.neutral_width);
+            $("#premise").val("");
+            $("#hypothesis").val("");
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            $('#api_output').html( "There was an error" );
+            console.log( errorThrown );
+        },
+        timeout: 3000
+    });
+}
+</script>
