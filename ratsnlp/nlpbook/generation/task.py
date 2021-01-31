@@ -2,8 +2,8 @@ from transformers import PreTrainedModel
 from transformers.optimization import AdamW
 from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
-from ratsnlp.nlpbook.arguments import TrainArguments
 from pytorch_lightning.trainer.supporters import TensorRunningAccum
+from ratsnlp.nlpbook.generation.arguments import GenerationTrainArguments
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
 
@@ -11,7 +11,7 @@ class GenerationTask(LightningModule):
 
     def __init__(self,
                  model: PreTrainedModel,
-                 args: TrainArguments,
+                 args: GenerationTrainArguments,
     ):
         super().__init__()
         self.model = model
