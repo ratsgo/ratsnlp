@@ -26,7 +26,7 @@ class GenerationTrainArguments:
         metadata={"help": "The output model dir."}
     )
     max_seq_length: int = field(
-        default=128,
+        default=32,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
@@ -61,7 +61,7 @@ class GenerationTrainArguments:
         metadata={"help": "Test Mode enables `fast_dev_run`"}
     )
     learning_rate: float = field(
-        default=5e-6,
+        default=5e-5,
         metadata={"help": "learning rate"}
     )
     optimizer: str = field(
@@ -77,7 +77,7 @@ class GenerationTrainArguments:
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(
-        default=0,
+        default=96,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
     cpu_workers: int = field(
@@ -126,7 +126,7 @@ class GenerationDeployArguments:
         metadata={"help": "The output model checkpoint path."}
     )
     max_seq_length: int = field(
-        default=128,
+        default=64,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."

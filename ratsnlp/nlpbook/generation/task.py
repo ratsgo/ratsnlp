@@ -38,7 +38,7 @@ class GenerationTask(LightningModule):
         return self.model(**kwargs)
 
     def step(self, inputs, mode="train"):
-        loss, logits = self.model(**inputs)
+        loss, logits, _ = self.model(**inputs)
         preds = logits.argmax(dim=-1)
         labels = inputs["labels"]
         acc = accuracy(preds, labels)

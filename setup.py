@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="ratsnlp",
-    version="0.0.955",
+    version="0.0.957",
     license='MIT',
     author="ratsgo",
     author_email="ratsgo@naver.com",
@@ -16,6 +16,7 @@ setuptools.setup(
         'ratsnlp.nlpbook.ner': ['*.html'],
         'ratsnlp.nlpbook.qa': ['*.html'],
         'ratsnlp.nlpbook.paircls': ['*.html'],
+        'ratsnlp.nlpbook.generation': ['*.html'],
     },
     install_requires=[
         "torch>=1.4.0",
