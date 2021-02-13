@@ -7,8 +7,9 @@ from filelock import FileLock
 from typing import List, Optional
 from dataclasses import dataclass
 from torch.utils.data.dataset import Dataset
-from transformers import PreTrainedTokenizer
 from ratsnlp.nlpbook.ner import NERTrainArguments
+
+from transformers import BertTokenizer
 from transformers.tokenization_utils_base import PaddingStrategy, TruncationStrategy
 
 
@@ -94,29 +95,43 @@ class NERCorpus:
 
 def _process_target_sentence(
         tokens: List[str],
+        origin_sentence: str,
         target_sentence: str,
         max_length: int,
         label_map: dict,
+        tokenizer: BertTokenizer,
         cls_token_at_end: Optional[bool] = False,
 ):
     """
-    target_sentence = "첫 회를 시작으로 <13일:DAT>까지 <4일간:DUR> 총 <4회:NOH>에 걸쳐 매 회 <2편:NOH>씩 총 <8편:NOH>이 공개될 예정이다."
-    tokens = ['첫', '회', '##를', '시작으로', '13', '##일까지', '4', '##일간', '총', '4', '##회', '##에', '걸쳐', '매', '회',
-              '2', '##편', '##씩', '총', '8', '##편', '##이', '공개', '##될', '예정이다', '.']
-    label_sequence = ['O', 'O', 'O', 'O', 'B-DAT', 'I-DAT', 'B-DUR', 'I-DUR', 'O', 'B-NOH', 'I-NOH',
-                      'O', 'O', 'O', 'O', 'B-NOH', 'I-NOH', 'O', 'O', 'B-NOH', 'I-NOH', 'O', 'O', 'O', 'O', 'O']
+    target_sentence = "―<효진:PER> 역의 <김환희:PER>(<14:NOH>)가 특히 인상적이었다."
+    tokens = ["―", "효", "##진", "역", "##의", "김", "##환", "##희",
+              "(", "14", ")", "가", "특히", "인상", "##적이", "##었다", "."]
+    label_sequence = ['O', 'B-PER', 'I-PER', 'O', 'O', 'B-PER', 'I-PER', 'I-PER', 'O',
+                      'B-NOH', 'O', 'O', 'O', 'O', 'O', 'O', 'O']
     """
-    prefix_sum_of_token_start_index, sum = [], 0
-    for i, token in enumerate(tokens):
-        if i == 0:
-            prefix_sum_of_token_start_index.append(0)
-            sum += len(token) - 1
+    if "[UNK]" in tokens:
+        processed_tokens = []
+        basic_tokens = tokenizer.basic_tokenizer.tokenize(origin_sentence)
+        for basic_token in basic_tokens:
+            current_tokens = tokenizer.tokenize(basic_token)
+            if "[UNK]" in current_tokens:
+                # [UNK] 복원
+                processed_tokens.append(basic_token)
+            else:
+                processed_tokens.extend(current_tokens)
+    else:
+        processed_tokens = tokens
+
+    prefix_sum_of_token_start_index, sum = [0], 0
+    for i, token in enumerate(processed_tokens):
+        if token.startswith("##"):
+            sum += len(token) - 2
         else:
-            prefix_sum_of_token_start_index.append(sum)
             sum += len(token)
+        prefix_sum_of_token_start_index.append(sum)
 
     regex_ner = re.compile('<(.+?):[A-Z]{3}>')  # NER Tag가 2자리 문자면 {3} -> {2}로 변경 (e.g. LOC -> LC) 인경우
-    regex_filter_res = regex_ner.finditer(target_sentence)
+    regex_filter_res = regex_ner.finditer(target_sentence.replace(" ", ""))
 
     list_of_ner_tag = []
     list_of_ner_text = []
@@ -138,11 +153,8 @@ def _process_target_sentence(
     entity_index = 0
     is_entity_still_B = True
 
-    for tup in zip(tokens, prefix_sum_of_token_start_index):
+    for tup in zip(processed_tokens, prefix_sum_of_token_start_index):
         token, index = tup
-
-        if '▁' in token:  # 주의할 점!! '▁' 이것과 우리가 쓰는 underscore '_'는 서로 다른 토큰임
-            index += 1  # 토큰이 띄어쓰기를 앞단에 포함한 경우 index 한개 앞으로 당김 # ('▁13', 9) -> ('13', 10)
 
         if entity_index < len(list_of_tuple_ner_start_end):
             start, end = list_of_tuple_ner_start_end[entity_index]
@@ -190,7 +202,7 @@ def _process_target_sentence(
 
 def _convert_examples_to_ner_features(
         examples: List[NERExample],
-        tokenizer: PreTrainedTokenizer,
+        tokenizer: BertTokenizer,
         args: NERTrainArguments,
         label_list: List[str],
         cls_token_at_end: Optional[bool] = False,
@@ -214,9 +226,11 @@ def _convert_examples_to_ner_features(
             )
             label_ids = _process_target_sentence(
                 tokens=tokens,
+                origin_sentence=example.text,
                 target_sentence=example.label,
                 max_length=args.max_seq_length,
                 label_map=label_map,
+                tokenizer=tokenizer,
                 cls_token_at_end=cls_token_at_end,
             )
             features.append(NERFeatures(**inputs, label_ids=label_ids))
@@ -237,7 +251,7 @@ class NERDataset(Dataset):
     def __init__(
             self,
             args: NERTrainArguments,
-            tokenizer: PreTrainedTokenizer,
+            tokenizer: BertTokenizer,
             corpus: NERCorpus,
             mode: Optional[str] = "train",
             convert_examples_to_features_fn=_convert_examples_to_ner_features,
