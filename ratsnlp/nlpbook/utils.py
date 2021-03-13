@@ -22,7 +22,7 @@ REMOTE_DATA_MAP = {
     },
     "ner": {
         "train": {
-            "googledrive_file_id": "1syaYeZk6r5ss8qy3JY-HBNBLwgnLmhtt",
+            "googledrive_file_id": "1RP764owqs1kZeHcjFnCX7zXt2EcjGY1i",
             "fname": "train.txt",
         },
         "val": {
