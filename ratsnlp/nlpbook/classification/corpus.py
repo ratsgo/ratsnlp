@@ -33,11 +33,10 @@ class NsmcCorpus:
     def __init__(self):
         pass
 
-    def _read_corpus(cls, input_file, quotechar='"'):
-        with open(input_file, "r", encoding="utf-8") as f:
-            return list(csv.reader(f, delimiter="\t", quotechar=quotechar))
-
-    def _create_examples(self, lines, set_type):
+    def get_examples(self, data_root_path, mode):
+        data_fpath = os.path.join(data_root_path, f"ratings_{mode}.txt")
+        logger.info(f"loading {mode} data... LOOKING AT {data_fpath}")
+        lines = list(csv.reader(open(data_fpath, "r", encoding="utf-8"), delimiter="\t", quotechar='"'))
         examples = []
         for (i, line) in enumerate(lines):
             if i == 0:
@@ -45,11 +44,6 @@ class NsmcCorpus:
             _, text_a, label = line
             examples.append(ClassificationExample(text_a=text_a, text_b=None, label=label))
         return examples
-
-    def get_examples(self, data_root_path, mode):
-        data_fpath = os.path.join(data_root_path, f"ratings_{mode}.txt")
-        logger.info(f"loading {mode} data... LOOKING AT {data_fpath}")
-        return self._create_examples(self._read_corpus(data_fpath), mode)
 
     def get_labels(self):
         return ["0", "1"]

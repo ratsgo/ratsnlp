@@ -11,7 +11,7 @@ from typing import List, Optional
 from multiprocessing import Pool, cpu_count
 from transformers import PreTrainedTokenizer
 from torch.utils.data.dataset import Dataset
-from ratsnlp.nlpbook.qa.arguments import QATrainArguments
+from ratsnlp.nlpbook.qa import QATrainArguments
 
 
 logger = logging.getLogger(__name__)

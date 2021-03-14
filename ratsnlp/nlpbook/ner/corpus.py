@@ -47,10 +47,11 @@ class NERCorpus:
     ):
         self.args = args
 
-    def get_examples(self, data_path, mode):
-        logger.info(f"loading {mode} data... LOOKING AT {data_path}")
+    def get_examples(self, data_root_path, mode):
+        data_fpath = os.path.join(data_root_path, f"{mode}.txt")
+        logger.info(f"loading {mode} data... LOOKING AT {data_fpath}")
         examples = []
-        for line in open(data_path, "r", encoding="utf-8").readlines():
+        for line in open(data_fpath, "r", encoding="utf-8").readlines():
             text, label = line.split("\u241E")
             examples.append(NERExample(text=text, label=label))
         return examples
@@ -287,13 +288,12 @@ class NERDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                corpus_fpath = os.path.join(
+                corpus_path = os.path.join(
                     args.downstream_corpus_root_dir,
                     args.downstream_corpus_name,
-                    f"{mode}.txt",
                 )
-                logger.info(f"Creating features from dataset file at {corpus_fpath}")
-                examples = self.corpus.get_examples(corpus_fpath, mode)
+                logger.info(f"Creating features from dataset file at {corpus_path}")
+                examples = self.corpus.get_examples(corpus_path, mode)
                 self.features = convert_examples_to_features_fn(
                     examples,
                     tokenizer,

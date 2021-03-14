@@ -10,12 +10,10 @@ class KorNLICorpus:
     def __init__(self):
         pass
 
-    def _read_corpus(cls, input_file):
-        corpus = open(input_file, "r", encoding="utf-8").readlines()
-        return [line.strip().split("\t") for line in corpus]
-
-    def _create_examples(self, lines, set_type):
+    def _create_examples(self, data_path):
         examples = []
+        corpus = open(data_path, "r", encoding="utf-8").readlines()
+        lines = [line.strip().split("\t") for line in corpus]
         for (i, line) in enumerate(lines):
             if i == 0:
                 continue
@@ -27,17 +25,17 @@ class KorNLICorpus:
         logger.info(f"loading {mode} data... LOOKING AT {data_path}")
         if mode == "train":
             multinli_train_data_fpath = os.path.join(data_path, "multinli.train.ko.tsv")
-            multinli_train_data = self._create_examples(self._read_corpus(multinli_train_data_fpath), mode)
+            multinli_train_data = self._create_examples(multinli_train_data_fpath)
             snli_train_data_fpath = os.path.join(data_path, "snli_1.0_train.ko.tsv")
-            snli_train_data = self._create_examples(self._read_corpus(snli_train_data_fpath), mode)
-            data = multinli_train_data + snli_train_data
+            snli_train_data = self._create_examples(snli_train_data_fpath)
+            examples = multinli_train_data + snli_train_data
         elif mode == "val":
             valid_data_fpath = os.path.join(data_path, "xnli.dev.ko.tsv")
-            data = self._create_examples(self._read_corpus(valid_data_fpath), mode)
+            examples = self._create_examples(valid_data_fpath)
         else:
             test_data_fpath = os.path.join(data_path, "xnli.test.ko.tsv")
-            data = self._create_examples(self._read_corpus(test_data_fpath), mode)
-        return data
+            examples = self._create_examples(test_data_fpath)
+        return examples
 
     def get_labels(self):
         return ["entailment", "contradiction", "neutral"]
