@@ -125,14 +125,15 @@ class GenerationDeployArguments:
         default=None,
         metadata={"help": "The name of the pretrained model"}
     )
+    pretrained_model_cache_dir: str = field(
+        default=None,
+        metadata={"help": "The pretrained model checkpoint path."}
+    )
     downstream_model_checkpoint_path: str = field(
         default=None,
         metadata={"help": "The output model checkpoint path."}
     )
-    max_seq_length: int = field(
-        default=64,
-        metadata={
-            "help": "The maximum total input sequence length after tokenization. Sequences longer "
-                    "than this will be truncated, sequences shorter will be padded."
-        }
+    force_download: bool = field(
+        default=False,
+        metadata={"help": "force to download downstream data and pretrained models."}
     )

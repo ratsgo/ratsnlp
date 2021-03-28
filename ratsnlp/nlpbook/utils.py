@@ -56,7 +56,7 @@ REMOTE_MODEL_MAP = {
             "googledrive_file_id": "1dDGtsMy1NsfpuvgX8XobBsCYyctn5Xex",
             "fname": "pytorch_model.bin",
         },
-        "model_config": {
+        "config": {
             "googledrive_file_id": "1z6obNRWPHoVrMzT9THElblebdovuDLUZ",
             "fname": "config.json",
         },
@@ -180,11 +180,11 @@ def download_downstream_dataset(args):
         raise ValueError(f"not valid data name({data_name}), cannot download resources")
 
 
-def download_pretrained_model(args):
+def download_pretrained_model(args, config_only=False):
     pretrained_model_name = args.pretrained_model_name.lower()
     if pretrained_model_name in REMOTE_MODEL_MAP.keys():
         for key, value in REMOTE_MODEL_MAP[pretrained_model_name].items():
-            if key != "config":
+            if not config_only or (config_only and key == "config"):
                 if "web_url" in value.keys():
                     web_download(
                         url=value["web_url"],
@@ -199,13 +199,6 @@ def download_pretrained_model(args):
                         cache_dir=args.pretrained_model_cache_dir,
                         force_download=args.force_download,
                     )
-            else:
-                valid_save_path = get_valid_path(args.pretrained_model_cache_dir, "config.json")
-                if os.path.exists(valid_save_path) and not args.force_download:
-                    logger.info(f"cache file({valid_save_path}) exists, using cache!")
-                else:
-                    with open(valid_save_path, "w") as f:
-                        json.dump(value, f, indent=4)
     else:
         raise ValueError(f"not valid model name({pretrained_model_name}), cannot download resources")
 

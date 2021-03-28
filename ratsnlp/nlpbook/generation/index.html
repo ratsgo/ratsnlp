@@ -1,0 +1,95 @@
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+</head>
+<body style="margin: 30;">
+    <div class="card border-dark mb-3" style="min-width: 30rem; max-width: 30rem;">
+      <div class="card-header">ratsgo's nlpbook</div>
+      <div class="card-body text-dark">
+        <h5 class="card-title">문장 생성 (Sentence Generation)</h5>
+        <p class="card-text">프롬프트에 이어진 문장을 생성합니다. <br> 아래 입력 란의 괄호는 기본값입니다.</p>
+        <div class="input-group mb-3">
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <input class="form-control" id="maxlength" placeholder="30">
+                    <label for="maxlength">생성 길이(30)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <input class="form-control" id="top-p" placeholder="1.0">
+                    <label for="top-p">top-p(1.0)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <input class="form-control" id="top-k" placeholder="1">
+                    <label for="top-k">top-k(1)</label>
+                </div>
+              </div>
+            </div>
+        </div>
+        <div class="input-group mb-3">
+           <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <input class="form-control" id="repetition_penalty" placeholder="1.0">
+                    <label for="repetition_penalty">repetition penalty(1.0)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <input class="form-control" id="temperature" placeholder="1.0">
+                    <label for="temperature">temperature(1.0)</label>
+                </div>
+              </div>
+           </div>
+        </div>
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" aria-describedby="basic-addon3" id="prompt" onkeypress="if(event.keyCode==13) {api_call(); return false;}" name="input" placeholder="프롬프트를 입력하세요"/>
+            <div id="run" class="spinner-border text-secondary m-2" role="status" style="visibility: hidden; border-top-left-radius: 50%; border-top-right-radius: 50%; border-bottom-left-radius: 50%; border-bottom-right-radius: 50%;">
+                <span class="visually-hidden">computing...</span>
+            </div>
+        </div>
+        <p class="card-text">
+            <div class="alert alert-info" role="alert">
+                <b>생성 결과</b>
+                <p id="generation" class="mb-0"></p>
+            </div>
+        </p>
+        <hr>
+        <p class="card-text"><small class="text-muted">이 웹 데모가 어떻게 동작하는지 자세히 확인하고 싶으신 분은 <a href="https://ratsgo.github.io/nlpbook/docs/ner">ratsgo's nlpbook</a>을 참고하세요. Copyright &copy; 2020 </b><a href="https://ratsgo.github.io/about">Gichang LEE.</a> Distributed by an <a href="https://github.com/ratsgo/nlpbook/tree/master/LICENSE">CC BY-NC-SA 3.0 license.</a></small></p>
+      </div>
+    </div>
+</body>
+
+<script>
+function api_call() {
+    var sentence = $("#prompt").val();
+    var length = $("#maxlength").val();
+    var topp = $("#top-p").val();
+    var topk = $("#top-k").val();
+    var repetition = $("#repetition_penalty").val();
+    var temp = $("#temperature").val();
+    var input = {prompt: sentence, max_length: length, top_p: topp, top_k: topk, repetition_penalty: repetition, temper: temp};
+    $('#run').css('visibility', "visible");
+    console.log(input);
+    $.ajax({
+        url: "/api",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(input),
+        success: function( data, textStatus, jQxhr ){
+            $('#generation').html( data.result );
+            $('#prompt').val("");
+            $('#run').css('visibility', "hidden");
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            $('#result').html( "처리 중 오류가 발생했습니다." );
+            console.log( errorThrown );
+        }
+    });
+}
+</script>
