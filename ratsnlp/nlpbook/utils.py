@@ -43,97 +43,23 @@ REMOTE_DATA_MAP = {
 }
 
 REMOTE_MODEL_MAP = {
-    "kobert" : {
-        "tokenizer" : {
-            "googledrive_file_id": "1775oaBR2fkXgH90jJRMeO39zmOb-73se",
-            "fname": "vocab.txt",
+    "kogpt2": {
+        "merges": {
+            "googledrive_file_id": "19-vpk-RAPhmIM1pPJ66F2Kbj4dW5V5sV",
+            "fname": "merges.txt",
         },
-        "model" : {
-            "web_url": "https://kobert.blob.core.windows.net/models/kobert/pytorch/pytorch_kobert_2439f391a6.params",
-            "fname": "pytorch_model.bin",
-        },
-        "config" : {
-            'model_type': "bert",
-            'attention_probs_dropout_prob': 0.1,
-            'hidden_act': 'gelu',
-            'hidden_dropout_prob': 0.1,
-            'hidden_size': 768,
-            'initializer_range': 0.02,
-            'intermediate_size': 3072,
-            'max_position_embeddings': 512,
-            'num_attention_heads': 12,
-            'num_hidden_layers': 12,
-            'type_vocab_size': 2,
-            'vocab_size': 8002,
-        },
-    },
-    "kcbert-base": {
-        "tokenizer": {
-            "web_url": "https://github.com/Beomi/KcBERT/raw/master/kcbert-base/vocab.txt",
-            "fname": "vocab.txt",
+        "vocab": {
+            "googledrive_file_id": "19vjuxYOmlNTfg8kYKOPOUlZERm-QoTnj",
+            "fname": "vocab.json",
         },
         "model": {
-            "web_url": "https://cdn.huggingface.co/beomi/kcbert-base/pytorch_model.bin",
+            "googledrive_file_id": "1dDGtsMy1NsfpuvgX8XobBsCYyctn5Xex",
             "fname": "pytorch_model.bin",
         },
-        "config": {
-            "max_position_embeddings": 300,
-            "hidden_dropout_prob": 0.1,
-            "pooler_size_per_head": 128,
-            "hidden_act": "gelu",
-            "initializer_range": 0.02,
-            "num_hidden_layers": 12,
-            "pooler_num_attention_heads": 12,
-            "type_vocab_size": 2,
-            "vocab_size": 30000,
-            "hidden_size": 768,
-            "attention_probs_dropout_prob": 0.1,
-            "directionality": "bidi",
-            "num_attention_heads": 12,
-            "pooler_fc_size": 768,
-            "pooler_type": "first_token_transform",
-            "pooler_num_fc_layers": 3,
-            "intermediate_size": 3072,
-            "architectures": [
-                "BertForMaskedLM"
-            ],
-            "model_type": "bert"
+        "model_config": {
+            "googledrive_file_id": "1z6obNRWPHoVrMzT9THElblebdovuDLUZ",
+            "fname": "config.json",
         },
-    },
-    "kcbert-large": {
-        "tokenizer": {
-            "web_url": "https://github.com/Beomi/KcBERT/raw/master/kcbert-large/vocab.txt",
-            "fname": "vocab.txt",
-        },
-        "model": {
-            "web_url": "https://cdn.huggingface.co/beomi/kcbert-large/pytorch_model.bin",
-            "fname": "pytorch_model.bin",
-        },
-        "config": {
-            "type_vocab_size": 2,
-            "initializer_range": 0.02,
-            "max_position_embeddings": 300,
-            "vocab_size": 30000,
-            "hidden_size": 1024,
-            "hidden_dropout_prob": 0.1,
-            "model_type": "bert",
-            "directionality": "bidi",
-            "pooler_num_attention_heads": 12,
-            "pooler_fc_size": 768,
-            "pad_token_id": 0,
-            "pooler_type": "first_token_transform",
-            "layer_norm_eps": 1e-12,
-            "hidden_act": "gelu",
-            "num_hidden_layers": 24,
-            "pooler_num_fc_layers": 3,
-            "num_attention_heads": 16,
-            "pooler_size_per_head": 128,
-            "attention_probs_dropout_prob": 0.1,
-            "intermediate_size": 4096,
-            "architectures": [
-                "BertForMaskedLM"
-            ]
-        }
     },
 }
 GOOGLE_DRIVE_URL = "https://docs.google.com/uc?export=download"

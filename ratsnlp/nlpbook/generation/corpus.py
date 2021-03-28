@@ -135,6 +135,7 @@ class GenerationDataset(Dataset):
                 )
                 logger.info(f"Creating features from dataset file at {corpus_path}")
                 examples = self.corpus.get_examples(corpus_path, mode)
+                tokenizer.pad_token = tokenizer.eos_token
                 self.features = convert_examples_to_features_fn(
                     examples,
                     tokenizer,

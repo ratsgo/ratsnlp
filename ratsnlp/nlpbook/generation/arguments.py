@@ -6,7 +6,11 @@ from dataclasses import dataclass, field
 class GenerationTrainArguments:
 
     pretrained_model_name: str = field(
-        default="taeminlee/kogpt2",
+        default="kogpt2",
+        metadata={"help": "pretrained model name"}
+    )
+    pretrained_model_cache_dir: str = field(
+        default="model",
         metadata={"help": "pretrained model name"}
     )
     downstream_task_name: str = field(
