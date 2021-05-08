@@ -121,10 +121,6 @@ class GenerationDeployArguments:
         default=None,
         metadata={"help": "The name of the pretrained model"}
     )
-    pretrained_model_cache_dir: str = field(
-        default=None,
-        metadata={"help": "The pretrained model checkpoint path."}
-    )
     downstream_model_checkpoint_path: str = field(
         default=None,
         metadata={"help": "The output model checkpoint path."}
