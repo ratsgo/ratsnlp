@@ -56,7 +56,7 @@ class QATrainArguments:
         metadata={"help": "save top k model checkpoints."}
     )
     monitor: str = field(
-        default="min val_loss_epoch",
+        default="min val_loss",
         metadata={"help": "monitor condition (save top k)"}
     )
     seed: int = field(
