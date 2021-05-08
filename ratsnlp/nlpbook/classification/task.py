@@ -38,8 +38,8 @@ class ClassificationTask(LightningModule):
         preds = outputs.logits.argmax(dim=-1)
         labels = inputs["labels"]
         acc = accuracy(preds, labels)
-        self.log("train_loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
-        self.log("train_acc", acc, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+        self.log("loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+        self.log("acc", acc, prog_bar=True, logger=True, on_step=True, on_epoch=False)
         return outputs.loss
 
     def validation_step(self, inputs, batch_idx):

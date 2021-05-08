@@ -34,7 +34,7 @@ class GenerationTask(LightningModule):
     def training_step(self, inputs, batch_idx):
         # outputs: CausalLMOutputWithCrossAttentions
         outputs = self.model(**inputs)
-        self.log("train_loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+        self.log("loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
         return outputs.loss
 
     def validation_step(self, inputs, batch_idx):

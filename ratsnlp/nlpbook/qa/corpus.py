@@ -201,13 +201,13 @@ def _squad_convert_example_to_features(example, max_seq_length, doc_stride, max_
         example.question_text, add_special_tokens=False, truncation=True, max_length=max_query_length
     )
     sequence_added_tokens = (
-        tokenizer.max_len - tokenizer.max_len_single_sentence + 1
+        tokenizer.model_max_length - tokenizer.max_len_single_sentence + 1
         if "roberta" in str(type(tokenizer)) or "camembert" in str(type(tokenizer))
-        else tokenizer.max_len - tokenizer.max_len_single_sentence
+        else tokenizer.model_max_length - tokenizer.max_len_single_sentence
     )
 
     # [CLS] question [SEP] context [SEP] > 따라서 총 3개
-    sequence_pair_added_tokens = tokenizer.max_len - tokenizer.max_len_sentences_pair
+    sequence_pair_added_tokens = tokenizer.model_max_length - tokenizer.max_len_sentences_pair
 
     span_doc_tokens = all_doc_tokens
     while len(spans) * doc_stride < len(all_doc_tokens):

@@ -13,13 +13,13 @@ def get_trainer(args, eval=True, return_trainer_only=True):
             save_top_k=args.save_top_k,
             monitor=args.monitor.split()[1],
             mode=args.monitor.split()[0],
-            prefix='',
+            filename='{epoch}-{val_loss:.2f}',
         )
     else:
         checkpoint_callback = ModelCheckpoint(
             dirpath=ckpt_path,
             save_last=True,
-            prefix='',
+            filename='{epoch}-{val_loss:.2f}',
         )
     trainer = Trainer(
         max_epochs=args.epochs,
