@@ -9,10 +9,6 @@ class GenerationTrainArguments:
         default="kogpt2",
         metadata={"help": "pretrained model name"}
     )
-    pretrained_model_cache_dir: str = field(
-        default="model",
-        metadata={"help": "pretrained model name"}
-    )
     downstream_task_name: str = field(
         default="sentence-generation",
         metadata={"help": "The name of the downstream data."}
@@ -45,7 +41,7 @@ class GenerationTrainArguments:
         metadata={"help": "save top k model checkpoints."}
     )
     monitor: str = field(
-        default="max val_acc",
+        default="min val_loss_epoch",
         metadata={"help": "monitor condition (save top k)"}
     )
     seed: int = field(

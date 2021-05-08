@@ -4,7 +4,6 @@ from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
 from ratsnlp.nlpbook.qa import QATrainArguments
 from pytorch_lightning.metrics.classification import accuracy
-from pytorch_lightning.trainer.supporters import TensorRunningAccum
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
 
@@ -17,7 +16,6 @@ class QATask(LightningModule):
         super().__init__()
         self.model = model
         self.args = args
-        self.running_accuracy = TensorRunningAccum(window_length=args.stat_window_length)
 
     def configure_optimizers(self):
         if self.args.optimizer == 'AdamW':
@@ -35,55 +33,22 @@ class QATask(LightningModule):
             'scheduler': scheduler,
         }
 
-    def forward(self, **kwargs):
-        return self.model(**kwargs)
-
-    def step(self, inputs, mode="train"):
-        loss, start_logits, end_logits = self.model(**inputs)
-        start_preds = start_logits.argmax(dim=-1)
-        end_preds = end_logits.argmax(dim=-1)
-        start_positions = inputs["start_positions"]
-        end_positions = inputs["end_positions"]
-        acc = (accuracy(start_preds, start_positions) + accuracy(end_preds, end_positions)) / 2
-        self.running_accuracy.append(acc)
-        logs = {f"{mode}_loss": loss, f"{mode}_acc": acc}
-        return {"loss": loss, "log": logs}
-
     def training_step(self, inputs, batch_idx):
-        return self.step(inputs, mode="train")
+        # outputs: QuestionAnsweringModelOutput
+        outputs = self.model(**inputs)
+        start_preds = outputs.start_logits.argmax(dim=-1)
+        end_preds = outputs.end_logits.argmax(dim=-1)
+        acc = (accuracy(start_preds, outputs.start_positions) + accuracy(end_preds, outputs.end_positions)) / 2
+        self.log("train_loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+        self.log("train_acc", acc, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+        return outputs.loss
 
     def validation_step(self, inputs, batch_idx):
-        return self.step(inputs, mode="val")
-
-    def test_step(self, inputs, batch_idx):
-        return self.step(inputs, mode="test")
-
-    def epoch_end(self, outputs, mode="train"):
-        loss_mean, acc_mean = 0, 0
-        for output in outputs:
-            loss_mean += output['loss']
-            acc_mean += output['log'][f'{mode}_acc']
-        acc_mean /= len(outputs)
-        results = {
-            'log': {
-                f'{mode}_loss': loss_mean,
-                f'{mode}_acc': acc_mean,
-            },
-            'progress_bar': {f'{mode}_acc': acc_mean},
-        }
-        return results
-
-    def validation_epoch_end(self, outputs):
-        return self.epoch_end(outputs, mode="val")
-
-    def test_epoch_end(self, outputs):
-        return self.epoch_end(outputs, mode="test")
-
-    def get_progress_bar_dict(self):
-        running_train_loss = self.trainer.running_loss.mean()
-        running_train_accuracy = self.running_accuracy.mean()
-        tqdm_dict = {
-            'tr_loss': '{:.3f}'.format(running_train_loss.cpu().item()),
-            'tr_acc': '{:.3f}'.format(running_train_accuracy.cpu().item()),
-        }
-        return tqdm_dict
+        # outputs: QuestionAnsweringModelOutput
+        outputs = self.model(**inputs)
+        start_preds = outputs.start_logits.argmax(dim=-1)
+        end_preds = outputs.end_logits.argmax(dim=-1)
+        acc = (accuracy(start_preds, outputs.start_positions) + accuracy(end_preds, outputs.end_positions)) / 2
+        self.log("val_loss", outputs.loss, prog_bar=False, logger=True, on_step=False, on_epoch=True)
+        self.log("val_acc", acc, prog_bar=False, logger=True, on_step=False, on_epoch=True)
+        return outputs.loss

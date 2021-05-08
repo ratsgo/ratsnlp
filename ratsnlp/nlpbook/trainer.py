@@ -9,7 +9,7 @@ def get_trainer(args, eval=True, return_trainer_only=True):
     os.makedirs(ckpt_path, exist_ok=True)
     if eval:
         checkpoint_callback = ModelCheckpoint(
-            filepath=ckpt_path,
+            dirpath=ckpt_path,
             save_top_k=args.save_top_k,
             monitor=args.monitor.split()[1],
             mode=args.monitor.split()[0],
@@ -17,7 +17,7 @@ def get_trainer(args, eval=True, return_trainer_only=True):
         )
     else:
         checkpoint_callback = ModelCheckpoint(
-            filepath=ckpt_path,
+            dirpath=ckpt_path,
             save_last=True,
             prefix='',
         )
@@ -25,7 +25,7 @@ def get_trainer(args, eval=True, return_trainer_only=True):
         max_epochs=args.epochs,
         fast_dev_run=args.test_mode,
         num_sanity_val_steps=None if args.test_mode else 0,
-        checkpoint_callback=checkpoint_callback,
+        callbacks=[checkpoint_callback],
         default_root_dir=ckpt_path,
         # For GPU Setup
         deterministic=torch.cuda.is_available(),
