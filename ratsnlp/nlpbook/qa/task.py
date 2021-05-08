@@ -38,7 +38,7 @@ class QATask(LightningModule):
         outputs = self.model(**inputs)
         start_preds = outputs.start_logits.argmax(dim=-1)
         end_preds = outputs.end_logits.argmax(dim=-1)
-        acc = (accuracy(start_preds, outputs.start_positions) + accuracy(end_preds, outputs.end_positions)) / 2
+        acc = (accuracy(start_preds, inputs["start_positions"]) + accuracy(end_preds, inputs["end_positions"])) / 2
         self.log("loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
         self.log("acc", acc, prog_bar=True, logger=True, on_step=True, on_epoch=False)
         return outputs.loss
@@ -48,7 +48,7 @@ class QATask(LightningModule):
         outputs = self.model(**inputs)
         start_preds = outputs.start_logits.argmax(dim=-1)
         end_preds = outputs.end_logits.argmax(dim=-1)
-        acc = (accuracy(start_preds, outputs.start_positions) + accuracy(end_preds, outputs.end_positions)) / 2
+        acc = (accuracy(start_preds, inputs["start_positions"]) + accuracy(end_preds, inputs["end_positions"])) / 2
         self.log("val_loss", outputs.loss, prog_bar=True, logger=True, on_step=False, on_epoch=True)
         self.log("val_acc", acc, prog_bar=True, logger=True, on_step=False, on_epoch=True)
         return outputs.loss
