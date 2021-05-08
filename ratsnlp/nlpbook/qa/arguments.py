@@ -47,9 +47,9 @@ class QATrainArguments:
             "help": "the number of threads, using for preprocessing"
         }
     )
-    overwrite_model: bool = field(
-        default=False,
-        metadata={"help": "overwrite model checkpoints."}
+    cpu_workers: int = field(
+        default=os.cpu_count(),
+        metadata={"help": "number of CPU workers"}
     )
     save_top_k: int = field(
         default=1,
@@ -95,37 +95,13 @@ class QATrainArguments:
         default=0,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
-    cpu_workers: int = field(
-        default=os.cpu_count(),
-        metadata={"help": "number of CPU workers"}
-    )
     fp16: bool = field(
         default=False,
         metadata={"help": "Enable train on FP16"}
     )
-    do_train: bool = field(
-        default=True,
-        metadata={"help": "do train or not"}
-    )
-    do_eval: bool = field(
-        default=True,
-        metadata={"help": "do validation or not"}
-    )
-    do_predict: bool = field(
-        default=False,
-        metadata={"help": "do test or not"}
-    )
     tpu_cores: int = field(
         default=0,
         metadata={"help": "Enable TPU with 1 core or 8 cores"}
-    )
-    report_cycle: int = field(
-        default=100,
-        metadata={"help": "Report (Train Metrics) Cycle"}
-    )
-    stat_window_length: int = field(
-        default=30,
-        metadata={"help": "train statistics window length"}
     )
     tqdm_enabled: bool = field(
         default=True,

@@ -4,23 +4,16 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 
-def get_trainer(args, eval=True, return_trainer_only=True):
+def get_trainer(args, return_trainer_only=True):
     ckpt_path = os.path.abspath(args.downstream_model_dir)
     os.makedirs(ckpt_path, exist_ok=True)
-    if eval:
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=ckpt_path,
-            save_top_k=args.save_top_k,
-            monitor=args.monitor.split()[1],
-            mode=args.monitor.split()[0],
-            filename='{epoch}-{val_loss:.2f}',
-        )
-    else:
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=ckpt_path,
-            save_last=True,
-            filename='{epoch}-{val_loss:.2f}',
-        )
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=ckpt_path,
+        save_top_k=args.save_top_k,
+        monitor=args.monitor.split()[1],
+        mode=args.monitor.split()[0],
+        filename='{epoch}-{val_loss:.2f}',
+    )
     trainer = Trainer(
         max_epochs=args.epochs,
         fast_dev_run=args.test_mode,

@@ -3,7 +3,6 @@ from transformers.optimization import AdamW
 from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
 from ratsnlp.nlpbook.qa import QATrainArguments
-from pytorch_lightning.metrics.classification import accuracy
 from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
 
 
@@ -37,8 +36,10 @@ class QATask(LightningModule):
         # outputs: QuestionAnsweringModelOutput
         outputs = self.model(**inputs)
         start_preds = outputs.start_logits.argmax(dim=-1)
+        start_positions = inputs["start_positions"]
         end_preds = outputs.end_logits.argmax(dim=-1)
-        acc = (accuracy(start_preds, inputs["start_positions"]) + accuracy(end_preds, inputs["end_positions"])) / 2
+        end_positions = inputs["end_positions"]
+        acc = (accuracy(start_preds, start_positions) + accuracy(end_preds, end_positions)) / 2
         self.log("loss", outputs.loss, prog_bar=False, logger=True, on_step=True, on_epoch=False)
         self.log("acc", acc, prog_bar=True, logger=True, on_step=True, on_epoch=False)
         return outputs.loss
@@ -47,8 +48,10 @@ class QATask(LightningModule):
         # outputs: QuestionAnsweringModelOutput
         outputs = self.model(**inputs)
         start_preds = outputs.start_logits.argmax(dim=-1)
+        start_positions = inputs["start_positions"]
         end_preds = outputs.end_logits.argmax(dim=-1)
-        acc = (accuracy(start_preds, inputs["start_positions"]) + accuracy(end_preds, inputs["end_positions"])) / 2
+        end_positions = inputs["end_positions"]
+        acc = (accuracy(start_preds, start_positions) + accuracy(end_preds, end_positions)) / 2
         self.log("val_loss", outputs.loss, prog_bar=True, logger=True, on_step=False, on_epoch=True)
         self.log("val_acc", acc, prog_bar=True, logger=True, on_step=False, on_epoch=True)
         return outputs.loss

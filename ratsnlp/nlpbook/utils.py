@@ -215,20 +215,6 @@ def set_logger(args):
     logger.info("Training/evaluation parameters %s", args)
 
 
-def check_exist_checkpoints(args):
-    if (
-        os.path.exists(args.downstream_model_dir)
-        and os.listdir(args.downstream_model_dir)
-        and args.do_train
-        and not args.overwrite_model
-    ):
-        raise ValueError(
-            f"Output directory ({args.downstream_model_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
-        )
-    else:
-        logger.info(f"Output directory ({args.downstream_model_dir}) is empty. check OK!")
-
-
 def seed_setting(args):
     set_seed(args.seed)
     logger.info(f"complete setting seed({args.seed})")
