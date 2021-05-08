@@ -48,6 +48,6 @@ class NERTask(LightningModule):
         preds = outputs.logits.argmax(dim=-1)
         labels = inputs["labels"]
         acc = accuracy(preds, labels, ignore_index=NER_PAD_ID)
-        self.log("val_loss", outputs.loss, prog_bar=False, logger=True, on_step=False, on_epoch=True)
-        self.log("val_acc", acc, prog_bar=False, logger=True, on_step=False, on_epoch=True)
+        self.log("val_loss", outputs.loss, prog_bar=True, logger=True, on_step=False, on_epoch=True)
+        self.log("val_acc", acc, prog_bar=True, logger=True, on_step=False, on_epoch=True)
         return outputs.loss

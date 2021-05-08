@@ -48,6 +48,6 @@ class ClassificationTask(LightningModule):
         preds = outputs.logits.argmax(dim=-1)
         labels = inputs["labels"]
         acc = accuracy(preds, labels)
-        self.log("val_loss", outputs.loss, prog_bar=False, logger=True, on_step=False, on_epoch=True)
-        self.log("val_acc", acc, prog_bar=False, logger=True, on_step=False, on_epoch=True)
+        self.log("val_loss", outputs.loss, prog_bar=True, logger=True, on_step=False, on_epoch=True)
+        self.log("val_acc", acc, prog_bar=True, logger=True, on_step=False, on_epoch=True)
         return outputs.loss
