@@ -20,11 +20,13 @@ def get_web_service_app(inference_fn, is_colab=True):
         query = request.json
         output_data = inference_fn(
             query["prompt"],
+            query["min_length"],
             query["max_length"],
             query["top_p"],
             query["top_k"],
             query["repetition_penalty"],
-            query["temper"],
+            query["no_repeat_ngram_size"],
+            query["temperature"],
         )
         response = jsonify(output_data)
         return response

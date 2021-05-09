@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="ratsnlp",
-    version="0.0.987",
+    version="0.0.988",
     license='MIT',
     author="ratsgo",
     author_email="ratsgo@naver.com",

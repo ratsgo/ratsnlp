@@ -13,8 +13,14 @@
             <div class="row g-2">
               <div class="col-md">
                 <div class="form-floating">
+                    <input class="form-control" id="minlength" placeholder="30">
+                    <label for="minlength">최소 길이(10)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
                     <input class="form-control" id="maxlength" placeholder="30">
-                    <label for="maxlength">생성 길이(30)</label>
+                    <label for="maxlength">최대 길이(30)</label>
                 </div>
               </div>
               <div class="col-md">
@@ -37,6 +43,12 @@
                 <div class="form-floating">
                     <input class="form-control" id="repetition_penalty" placeholder="1.0">
                     <label for="repetition_penalty">repetition penalty(1.0)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <input class="form-control" id="no_repeat_ngram_size" placeholder="1.0">
+                    <label for="no_repeat_ngram_size">no repeat ngram size(0)</label>
                 </div>
               </div>
               <div class="col-md">
@@ -68,12 +80,14 @@
 <script>
 function api_call() {
     var sentence = $("#prompt").val();
-    var length = $("#maxlength").val();
+    var minl = $("#minlength").val();
+    var maxl = $("#maxlength").val();
     var topp = $("#top-p").val();
     var topk = $("#top-k").val();
     var repetition = $("#repetition_penalty").val();
+    var nongram = $("#no_repeat_ngram_size").val();
     var temp = $("#temperature").val();
-    var input = {prompt: sentence, max_length: length, top_p: topp, top_k: topk, repetition_penalty: repetition, temper: temp};
+    var input = {prompt: sentence, min_length: minl, max_length: maxl, top_p: topp, top_k: topk, repetition_penalty: repetition, no_repeat_ngram_size: nongram, temperature: temp};
     $('#run').css('visibility', "visible");
     console.log(input);
     $.ajax({
