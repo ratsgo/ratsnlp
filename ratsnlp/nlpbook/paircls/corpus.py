@@ -1,8 +1,44 @@
 import os
+import json
 import logging
 from ratsnlp.nlpbook.classification.corpus import ClassificationExample
 
 logger = logging.getLogger(__name__)
+
+
+class KlueNLICorpus:
+
+    def __init__(self):
+        pass
+
+    def _create_examples(self, data_path):
+        examples = []
+        data = json.load(open(data_path, "r"))
+        for el in data:
+            example = ClassificationExample(
+                text_a=el["premise"],
+                text_b=el["hypothesis"],
+                label=el["gold_label"],
+            )
+            examples.append(example)
+        return examples
+
+    def get_examples(self, data_path, mode):
+        if mode == "train":
+            data_fpath = os.path.join(data_path, "klue_nli_train.json")
+        else:
+            data_fpath = os.path.join(data_path, "klue_nli_dev.json")
+        logger.info(f"loading {mode} data... LOOKING AT {data_fpath}")
+        examples = self._create_examples(data_fpath)
+        return examples
+
+    def get_labels(self):
+        return ["entailment", "contradiction", "neutral"]
+
+    @property
+    def num_labels(self):
+        return len(self.get_labels())
+
 
 
 class KorNLICorpus:

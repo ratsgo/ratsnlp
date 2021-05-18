@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import tqdm
 import logging
 import requests
@@ -19,6 +18,16 @@ REMOTE_DATA_MAP = {
             "web_url": "https://github.com/e9t/nsmc/raw/master/ratings_test.txt",
             "fname": "val.txt",
         },
+    },
+    "klue-nli": {
+        "train": {
+            "googledrive_file_id": "18LhrHaPEW0VITMPfnwKXJ6bNuklBdi4U",
+            "fname": "klue_nli_train.json",
+        },
+        "val": {
+            "googledrive_file_id": "1UKIDAFOFuDSah7A66FZXSA8XUWUHhBAd",
+            "fname": "klue_nli_dev.json",
+        }
     },
     "ner": {
         "train": {
