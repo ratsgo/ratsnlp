@@ -132,10 +132,10 @@ class QADeployArguments:
             if len(ckpt_file_names) == 0:
                 raise Exception(f"downstream_model_dir \"{downstream_model_dir}\" is not valid")
             selected_fname = ckpt_file_names[-1]
-            min_val_loss = os.path.split(selected_fname)[-1].replace(".ckpt", "").split("=")[-1]
+            min_val_loss = os.path.split(selected_fname)[-1].replace(".ckpt", "").split("=")[-1].split("-")[0]
             try:
                 for ckpt_file_name in ckpt_file_names:
-                    val_loss = os.path.split(ckpt_file_name)[-1].replace(".ckpt", "").split("=")[-1]
+                    val_loss = os.path.split(ckpt_file_name)[-1].replace(".ckpt", "").split("=")[-1].split("-")[0]
                     if float(val_loss) < float(min_val_loss):
                         selected_fname = ckpt_file_name
                         min_val_loss = val_loss
