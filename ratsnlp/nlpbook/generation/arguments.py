@@ -1,4 +1,5 @@
 import os
+from glob import glob
 from dataclasses import dataclass, field
 
 
@@ -93,15 +94,31 @@ class GenerationTrainArguments:
 @dataclass
 class GenerationDeployArguments:
 
-    pretrained_model_name: str = field(
-        default=None,
-        metadata={"help": "The name of the pretrained model"}
-    )
-    downstream_model_checkpoint_path: str = field(
-        default=None,
-        metadata={"help": "The output model checkpoint path."}
-    )
-    force_download: bool = field(
-        default=False,
-        metadata={"help": "force to download downstream data and pretrained models."}
-    )
+    def __init__(
+            self,
+            pretrained_model_name=None,
+            downstream_model_dir=None,
+            downstream_model_checkpoint_fpath=None,
+    ):
+        self.pretrained_model_name = pretrained_model_name
+        if downstream_model_checkpoint_fpath is not None:
+            self.downstream_model_checkpoint_fpath = downstream_model_checkpoint_fpath
+        elif downstream_model_dir is not None:
+            ckpt_file_names = glob(os.path.join(downstream_model_dir, "*.ckpt"))
+            ckpt_file_names = [el for el in ckpt_file_names if "temp" not in el and "tmp" not in el]
+            if len(ckpt_file_names) == 0:
+                raise Exception(f"downstream_model_dir \"{downstream_model_dir}\" is not valid")
+            selected_fname = ckpt_file_names[-1]
+            min_val_loss = os.path.split(selected_fname)[-1].replace(".ckpt", "").split("=")[-1]
+            try:
+                for ckpt_file_name in ckpt_file_names:
+                    val_loss = os.path.split(ckpt_file_name)[-1].replace(".ckpt", "").split("=")[-1]
+                    if float(val_loss) < float(min_val_loss):
+                        selected_fname = ckpt_file_name
+                        min_val_loss = val_loss
+            except:
+                raise Exception(f"the ckpt file name of downstream_model_directory \"{downstream_model_dir}\" is not valid")
+            self.downstream_model_checkpoint_fpath = selected_fname
+        else:
+            raise Exception("Either downstream_model_dir or downstream_model_checkpoint_fpath must be entered.")
+        print(f"downstream_model_checkpoint_fpath: {self.downstream_model_checkpoint_fpath}")
