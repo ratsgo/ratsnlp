@@ -15,7 +15,7 @@ class GenerationTrainArguments:
         metadata={"help": "The name of the downstream data."}
     )
     downstream_corpus_name: str = field(
-        default=None,
+        default="nsmc",
         metadata={"help": "The name of the downstream data."}
     )
     downstream_corpus_root_dir: str = field(
@@ -23,7 +23,7 @@ class GenerationTrainArguments:
         metadata={"help": "The root directory of the downstream data."}
     )
     downstream_model_dir: str = field(
-        default=None,
+        default="/gdrive/My Drive/nlpbook/checkpoint-generation",
         metadata={"help": "The output model dir."}
     )
     max_seq_length: int = field(
@@ -61,16 +61,8 @@ class GenerationTrainArguments:
         default=5e-5,
         metadata={"help": "learning rate"}
     )
-    optimizer: str = field(
-        default="AdamW",
-        metadata={"help": "optimizer"}
-    )
-    lr_scheduler: str = field(
-        default="exp",
-        metadata={"help": "ExponentialLR or CosineAnnealingWarmRestarts"}
-    )
     epochs: int = field(
-        default=20,
+        default=3,
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(

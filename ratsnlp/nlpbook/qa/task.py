@@ -3,7 +3,7 @@ from transformers.optimization import AdamW
 from ratsnlp.nlpbook.metrics import accuracy
 from pytorch_lightning import LightningModule
 from ratsnlp.nlpbook.qa import QATrainArguments
-from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import ExponentialLR
 
 
 class QATask(LightningModule):
@@ -17,16 +17,8 @@ class QATask(LightningModule):
         self.args = args
 
     def configure_optimizers(self):
-        if self.args.optimizer == 'AdamW':
-            optimizer = AdamW(self.parameters(), lr=self.args.learning_rate)
-        else:
-            raise NotImplementedError('Only AdamW is Supported!')
-        if self.args.lr_scheduler == 'cos':
-            scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=1, T_mult=2)
-        elif self.args.lr_scheduler == 'exp':
-            scheduler = ExponentialLR(optimizer, gamma=0.5)
-        else:
-            raise NotImplementedError('Only cos and exp lr scheduler is Supported!')
+        optimizer = AdamW(self.parameters(), lr=self.args.learning_rate)
+        scheduler = ExponentialLR(optimizer, gamma=0.9)
         return {
             'optimizer': optimizer,
             'scheduler': scheduler,

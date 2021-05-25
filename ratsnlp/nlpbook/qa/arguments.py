@@ -11,7 +11,7 @@ class QATrainArguments:
         metadata={"help": "pretrained model name"}
     )
     downstream_corpus_name: str = field(
-        default=None,
+        default="korquad-v1",
         metadata={"help": "The name of the downstream data."}
     )
     downstream_corpus_root_dir: str = field(
@@ -19,24 +19,24 @@ class QATrainArguments:
         metadata={"help": "The root directory of the downstream data."}
     )
     downstream_model_dir: str = field(
-        default=None,
+        default="/gdrive/My Drive/nlpbook/checkpoint-qa",
         metadata={"help": "The output model dir."}
     )
     max_seq_length: int = field(
-        default=384,
+        default=128,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
         }
     )
     doc_stride: int = field(
-        default=128,
+        default=64,
         metadata={
             "help": "When splitting up a long document into chunks, how much stride to take between chunks."
         }
     )
     max_query_length: int = field(
-        default=64,
+        default=32,
         metadata={
             "help": "The maximum number of tokens for the question. Questions longer than this will "
                     "be truncated to this length."
@@ -80,20 +80,12 @@ class QATrainArguments:
         default=5e-5,
         metadata={"help": "learning rate"}
     )
-    optimizer: str = field(
-        default="AdamW",
-        metadata={"help": "optimizer"}
-    )
-    lr_scheduler: str = field(
-        default="exp",
-        metadata={"help": "ExponentialLR or CosineAnnealingWarmRestarts"}
-    )
     epochs: int = field(
-        default=20,
+        default=3,
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(
-        default=0,
+        default=32,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
     fp16: bool = field(

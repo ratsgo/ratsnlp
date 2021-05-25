@@ -58,23 +58,15 @@ class ClassificationTrainArguments:
         metadata={"help": "Test Mode enables `fast_dev_run`"}
     )
     learning_rate: float = field(
-        default=5e-6,
+        default=5e-5,
         metadata={"help": "learning rate"}
     )
-    optimizer: str = field(
-        default="AdamW",
-        metadata={"help": "optimizer"}
-    )
-    lr_scheduler: str = field(
-        default="exp",
-        metadata={"help": "ExponentialLR or CosineAnnealingWarmRestarts"}
-    )
     epochs: int = field(
-        default=20,
+        default=3,
         metadata={"help": "max epochs"}
     )
     batch_size: int = field(
-        default=0,
+        default=32,
         metadata={"help": "batch size. if 0, Let PyTorch Lightening find the best batch size"}
     )
     cpu_workers: int = field(
