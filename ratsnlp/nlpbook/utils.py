@@ -3,9 +3,7 @@ import sys
 import tqdm
 import logging
 import requests
-from transformers import set_seed
 from transformers import HfArgumentParser
-from pytorch_lightning import _logger as lightning_logger
 
 
 REMOTE_DATA_MAP = {
@@ -213,16 +211,16 @@ def download_pretrained_model(args, config_only=False):
 
 
 def set_logger(args):
-    # 파이토치 라이트닝이 학습 초반부에 로그를 두 번씩 찍는 버그가 있어
-    # 이를 해결하기 위해 handler를 빈 리스트로 초기화한다
-    lightning_logger.handlers = []
+    import torch
+    if torch.cuda.is_available():
+        stream_handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            fmt="%(levelname)s:%(name)s:%(message)s",
+        )
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
     logger.setLevel(logging.INFO)
     logger.info("Training/evaluation parameters %s", args)
-
-
-def seed_setting(args):
-    set_seed(args.seed)
-    logger.info(f"complete setting seed({args.seed})")
 
 
 def load_arguments(argument_class, json_file_path=None):

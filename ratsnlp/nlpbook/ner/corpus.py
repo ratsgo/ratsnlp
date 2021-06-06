@@ -6,14 +6,14 @@ import logging
 from filelock import FileLock
 from typing import List, Optional
 from dataclasses import dataclass
+from transformers import BertTokenizer
 from torch.utils.data.dataset import Dataset
 from ratsnlp.nlpbook.ner import NERTrainArguments
-
-from transformers import BertTokenizer
 from transformers.tokenization_utils_base import PaddingStrategy, TruncationStrategy
 
 
 logger = logging.getLogger("ratsnlp")
+
 
 # 자체 제작 NER 코퍼스 기준의 레이블 시퀀스를 만들기 위한 ID 체계
 # 나 는 삼성 에 입사 했다
@@ -62,7 +62,7 @@ class NERCorpus:
             "label_map.txt",
         )
         if not os.path.exists(label_map_path):
-            logging.info("processing NER tag dictionary...")
+            logger.info("processing NER tag dictionary...")
             os.makedirs(self.args.downstream_model_dir, exist_ok=True)
             ner_tags = []
             regex_ner = re.compile('<(.+?):[A-Z]{3}>')
@@ -301,7 +301,7 @@ class NERDataset(Dataset):
                     label_list=self.corpus.get_labels(),
                 )
                 start = time.time()
-                logging.info(
+                logger.info(
                     "Saving features into cached file, it could take a lot of time..."
                 )
                 torch.save(self.features, cached_features_file)

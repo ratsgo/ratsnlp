@@ -3,6 +3,7 @@ import json
 import logging
 from ratsnlp.nlpbook.classification.corpus import ClassificationExample
 
+
 logger = logging.getLogger("ratsnlp")
 
 

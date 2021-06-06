@@ -142,7 +142,7 @@ class GenerationDataset(Dataset):
                     args,
                 )
                 start = time.time()
-                logging.info(
+                logger.info(
                     "Saving features into cached file, it could take a lot of time..."
                 )
                 torch.save(self.features, cached_features_file)

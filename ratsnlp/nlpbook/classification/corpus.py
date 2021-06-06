@@ -10,6 +10,7 @@ from torch.utils.data.dataset import Dataset
 from transformers import PreTrainedTokenizer
 from ratsnlp.nlpbook.classification.arguments import ClassificationTrainArguments
 
+
 logger = logging.getLogger("ratsnlp")
 
 
@@ -150,7 +151,7 @@ class ClassificationDataset(Dataset):
                     label_list=self.corpus.get_labels(),
                 )
                 start = time.time()
-                logging.info(
+                logger.info(
                     "Saving features into cached file, it could take a lot of time..."
                 )
                 torch.save(self.features, cached_features_file)

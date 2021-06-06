@@ -380,7 +380,7 @@ class QADataset(Dataset):
                 examples = self.corpus.get_examples(corpus_fpath, mode)
                 self.features = convert_examples_to_features_fn(examples, tokenizer, args)
                 start = time.time()
-                logging.info(
+                logger.info(
                     "Saving features into cached file, it could take a lot of time..."
                 )
                 torch.save(self.features, cached_features_file)
