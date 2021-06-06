@@ -223,6 +223,16 @@ def set_logger(args):
     logger.info("Training/evaluation parameters %s", args)
 
 
+def set_seed(args):
+    if args.seed is not None:
+        # 향후 pytorch-lightning의 seed_everything까지 확장
+        from transformers import set_seed
+        set_seed(args.seed)
+        print(f"set seed: {args.seed}")
+    else:
+        print("not fixed seed")
+
+
 def load_arguments(argument_class, json_file_path=None):
     parser = HfArgumentParser(argument_class)
     if json_file_path is not None:

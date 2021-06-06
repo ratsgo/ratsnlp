@@ -42,7 +42,7 @@ class GenerationTrainArguments:
         metadata={"help": "monitor condition (save top k)"}
     )
     seed: int = field(
-        default=7,
+        default=None,
         metadata={"help": "random seed."}
     )
     overwrite_cache: bool = field(

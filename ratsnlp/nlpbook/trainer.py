@@ -21,7 +21,7 @@ def get_trainer(args, return_trainer_only=True):
         callbacks=[checkpoint_callback],
         default_root_dir=ckpt_path,
         # For GPU Setup
-        deterministic=torch.cuda.is_available(),
+        deterministic=torch.cuda.is_available() and args.seed is not None,
         gpus=torch.cuda.device_count() if torch.cuda.is_available() else None,
         precision=16 if args.fp16 else 32,
         # For TPU Setup
