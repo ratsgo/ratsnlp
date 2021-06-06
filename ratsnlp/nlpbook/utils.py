@@ -72,7 +72,7 @@ REMOTE_MODEL_MAP = {
     },
 }
 GOOGLE_DRIVE_URL = "https://docs.google.com/uc?export=download"
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger("ratsnlp")  # pylint: disable=invalid-name
 
 
 def save_response_content(response, save_path):
@@ -216,11 +216,7 @@ def set_logger(args):
     # 파이토치 라이트닝이 학습 초반부에 로그를 두 번씩 찍는 버그가 있어
     # 이를 해결하기 위해 handler를 빈 리스트로 초기화한다
     lightning_logger.handlers = []
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO,
-    )
+    logger.setLevel(logging.INFO)
     logger.info("Training/evaluation parameters %s", args)
 
 

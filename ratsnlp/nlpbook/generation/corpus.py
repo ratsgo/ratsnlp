@@ -11,7 +11,7 @@ from transformers import PreTrainedTokenizerFast
 from ratsnlp.nlpbook.generation.arguments import GenerationTrainArguments
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ratsnlp")
 
 
 @dataclass

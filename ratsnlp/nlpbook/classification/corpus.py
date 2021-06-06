@@ -10,7 +10,7 @@ from torch.utils.data.dataset import Dataset
 from transformers import PreTrainedTokenizer
 from ratsnlp.nlpbook.classification.arguments import ClassificationTrainArguments
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ratsnlp")
 
 
 @dataclass

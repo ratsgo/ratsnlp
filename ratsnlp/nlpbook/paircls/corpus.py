@@ -3,7 +3,7 @@ import json
 import logging
 from ratsnlp.nlpbook.classification.corpus import ClassificationExample
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ratsnlp")
 
 
 class KlueNLICorpus:

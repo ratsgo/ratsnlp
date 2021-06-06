@@ -1,2 +1,3 @@
 # ratsnlp
-tools for Natural Language Processing
+
+자연어 처리 실습을 위한 패키지입니다. 구글 코랩(colab) 환경에서 동작할 수 있도록 작성하였습니다.

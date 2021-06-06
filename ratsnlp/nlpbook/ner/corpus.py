@@ -13,7 +13,7 @@ from transformers import BertTokenizer
 from transformers.tokenization_utils_base import PaddingStrategy, TruncationStrategy
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ratsnlp")
 
 # 자체 제작 NER 코퍼스 기준의 레이블 시퀀스를 만들기 위한 ID 체계
 # 나 는 삼성 에 입사 했다

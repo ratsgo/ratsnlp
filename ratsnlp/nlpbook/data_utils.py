@@ -1,8 +1,4 @@
 import torch
-import logging
-
-
-logger = logging.getLogger(__name__)
 
 
 def data_collator(features):

@@ -14,7 +14,7 @@ from torch.utils.data.dataset import Dataset
 from ratsnlp.nlpbook.qa import QATrainArguments
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ratsnlp")
 
 
 @dataclass
