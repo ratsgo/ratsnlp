@@ -9,7 +9,7 @@ def requirements():
 
 setuptools.setup(
     name="ratsnlp",
-    version="0.0.9992",
+    version="0.0.9998",
     license='MIT',
     author="ratsgo",
     author_email="ratsgo@naver.com",
