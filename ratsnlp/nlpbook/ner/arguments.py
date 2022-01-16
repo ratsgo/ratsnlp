@@ -19,7 +19,7 @@ class NERTrainArguments:
         metadata={"help": "The name of the downstream data."}
     )
     downstream_corpus_root_dir: str = field(
-        default="/root/Korpora",
+        default="/content/Korpora",
         metadata={"help": "The root directory of the downstream data."}
     )
     downstream_model_dir: str = field(
