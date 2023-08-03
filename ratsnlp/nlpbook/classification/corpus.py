@@ -35,19 +35,24 @@ class NsmcCorpus:
         pass
 
     def get_examples(self, data_root_path, mode):
-        data_fpath = os.path.join(data_root_path, f"ratings_{mode}.txt")
-        logger.info(f"loading {mode} data... LOOKING AT {data_fpath}")
-        lines = list(csv.reader(open(data_fpath, "r", encoding="utf-8"), delimiter="\t", quotechar='"'))
+        data_fpath = os.path.join(data_root_path, f"{mode}.json")
+        with open(data_fpath, "r", encoding="utf8") as file:
+            data = json.load(file)
+        
         examples = []
-        for (i, line) in enumerate(lines):
-            if i == 0:
-                continue
-            _, text_a, label = line
+        
+        for item in data:
+            text_a = item.get("passage", None)
+            label = item.get("typeId", None)
             examples.append(ClassificationExample(text_a=text_a, text_b=None, label=label))
+    
         return examples
 
     def get_labels(self):
-        return ["0", "1"]
+        labels=[]
+        for i in range (0,10):
+            labels.append(str(i))
+        return labels
 
     @property
     def num_labels(self):
